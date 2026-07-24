@@ -1,0 +1,98 @@
+{# Rendered standalone (partial=1) for live filtering, and included by index.html #}
+<div id="results" aria-live="polite">
+  <div class="results-bar">
+    <div class="count">
+      <strong>{{ "{:,}".format(result.total) }}</strong>
+      <span>open {{ "position" if result.total == 1 else "positions" }}</span>
+      {% if result.total != result.facets.total_open %}
+      <span class="of">of {{ "{:,}".format(result.facets.total_open) }} total</span>
+      {% endif %}
+    </div>
+    <div class="tools">
+      <label class="sort">
+        Sort
+        <select name="sort" form="filters">
+          <option value="posted" {% if f.sort == 'posted' %}selected{% endif %}>Newest posted</option>
+          <option value="closing" {% if f.sort == 'closing' %}selected{% endif %}>Closing soonest</option>
+          <option value="salary" {% if f.sort == 'salary' %}selected{% endif %}>Highest salary</option>
+        </select>
+      </label>
+      <a class="tool-link" href="/rss?{{ query_string }}" title="RSS feed of this search">RSS</a>
+      <details class="save">
+        <summary class="tool-link">Save search</summary>
+        <form method="post" action="/saved-searches" class="save-form">
+          <input type="hidden" name="query_string" value="{{ query_string }}">
+          <input type="text" name="name" placeholder="Name this search" required>
+          <button type="submit">Save</button>
+        </form>
+      </details>
+    </div>
+  </div>
+
+  {% if result.listings %}
+  <ol class="listing-list">
+    {% for l in result.listings %}
+    <li class="listing" data-band="{{ l.level_band or 'na' }}">
+      <div class="listing-main">
+        <div class="listing-top">
+          <span class="uni">{{ l.university }}</span>
+          <span class="state-badge">{{ l.state }}</span>
+          {% if l.remote_flag %}<span class="tag tag-remote">Remote</span>{% endif %}
+        </div>
+        <h3 class="listing-title">
+          <a href="{{ l.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ l.title }}</a>
+        </h3>
+        <div class="listing-meta">
+          {% if l.campus_location %}<span class="m loc">{{ l.campus_location }}</span>{% endif %}
+          {% if l.role_family %}<span class="m fam">{{ l.role_family|replace('-', ' ') }}</span>{% endif %}
+          {% if l.classification_raw %}<span class="m cls">{{ l.classification_raw }}</span>{% endif %}
+          {% if l.work_type %}<span class="m wt">{{ l.work_type|replace('-', ' ') }}</span>{% endif %}
+          {% if l.time_fraction %}<span class="m tf">{{ l.time_fraction|replace('-', ' ') }}</span>{% endif %}
+        </div>
+        {% if l.excerpt %}<p class="listing-excerpt">{{ l.excerpt }}</p>{% endif %}
+      </div>
+      <div class="listing-side">
+        {% if l.level_band %}<span class="band band-{{ l.level_band }}">{{ l.level_band|replace('-', ' ') }}</span>{% endif %}
+        {% set sr = salary_range(l) %}
+        {% if sr %}<span class="salary">{{ sr }}</span>{% else %}<span class="salary none">salary n/a</span>{% endif %}
+        <span class="posted">{{ l.posted_at|ago }}</span>
+        <span class="closes {{ 'soon' if l.closes_at and (l.closes_at - now).days <= 7 and (l.closes_at - now).days >= 0 else '' }}">
+          {{ l.closes_at|until }}
+        </span>
+      </div>
+    </li>
+    {% endfor %}
+  </ol>
+
+  {% set pages = (result.total + result.per_page - 1) // result.per_page %}
+  {% if pages > 1 %}
+  <nav class="pager" aria-label="Pagination">
+    {% if result.page > 1 %}
+      <a href="/?{{ query_string|replace('page=' ~ result.page, '') }}&page={{ result.page - 1 }}">← Newer</a>
+    {% endif %}
+    <span class="pager-status">Page {{ result.page }} of {{ pages }}</span>
+    {% if result.page < pages %}
+      <a href="/?{{ query_string|replace('page=' ~ result.page, '') }}&page={{ result.page + 1 }}">Older →</a>
+    {% endif %}
+  </nav>
+  {% endif %}
+
+  {% else %}
+  <div class="empty">
+    <h3>No positions match these filters.</h3>
+    <p>Try widening your search:</p>
+    <ul>
+      {% if f.posted_within %}<li>Remove the <strong>“posted within”</strong> limit to see older listings.</li>{% endif %}
+      {% if f.has_salary %}<li>Uncheck <strong>“only listings with a published salary”</strong> — most don't publish one.</li>{% endif %}
+      {% if f.level_bands %}<li>Broaden the <strong>level band</strong> selection.</li>{% endif %}
+      {% if f.states %}<li>Add more <strong>states</strong>, or remove the state filter.</li>{% endif %}
+      {% if f.groups or f.universities %}<li>Include more <strong>universities</strong> or clear the group presets.</li>{% endif %}
+      {% if f.q %}<li>Try a broader <strong>keyword</strong> than “{{ f.q }}”.</li>{% endif %}
+      {% if not (f.posted_within or f.has_salary or f.level_bands or f.states or f.groups or f.universities or f.q) %}
+      <li>There may be no open listings yet — run a crawl (<code>python -m app.ingest.runner</code>) or load seed data.</li>
+      {% endif %}
+    </ul>
+    <a class="btn-primary" href="/">Clear all filters</a>
+  </div>
+  {% endif %}
+</div>

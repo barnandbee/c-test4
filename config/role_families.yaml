@@ -35,8 +35,10 @@ families:
                "systems administrator", "network", "audiovisual", "av technician"]
 
   - family: student
-    keywords: ["phd", "scholarship", "graduate research", "student ",
-               "casual student", "vacation research"]
+    # Genuine student-cohort roles only — NOT "student services"/"student
+    # experience" professional roles (those fall through to professional).
+    keywords: ["phd scholarship", "phd candidate", "graduate research",
+               "vacation research", "research scholarship", "hdr scholarship"]
 
   - family: professional
     # catch-all for general/professional staff — LAST so it doesn't shadow others

@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Source health — AU Uni Jobs{% endblock %}
+{% block content %}
+<div class="admin">
+  <h1>Source health</h1>
+  {% if last_run %}
+  <p class="admin-summary">
+    Last refresh <strong>#{{ last_run.id }}</strong> · {{ last_run.status }} ·
+    started {{ last_run.started_at|ago }} ·
+    <span class="ok">{{ last_run.universities_ok }} ok</span> /
+    <span class="bad">{{ last_run.universities_failed }} failed</span>
+  </p>
+  {% else %}
+  <p class="admin-summary">No crawl has run yet. Run <code>python -m app.ingest.runner</code>.</p>
+  {% endif %}
+
+  <table class="health">
+    <thead>
+      <tr>
+        <th>University</th><th>Adapter</th><th>Confidence</th>
+        <th>Status</th><th class="num">Records</th><th>Last run</th><th class="num">ms</th><th>Note</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in rows %}
+      <tr class="{{ 'row-stale' if r.stale else '' }}">
+        <td>{{ r.uni.name }} <span class="state-badge sm">{{ r.uni.state }}</span></td>
+        <td><code>{{ r.uni.adapter }}</code></td>
+        <td><span class="conf conf-{{ r.confidence }}">{{ r.confidence }}</span></td>
+        {% if r.run %}
+          <td><span class="status status-{{ r.run.status }}">{{ r.run.status|replace('_',' ') }}</span></td>
+          <td class="num">{{ r.run.records_returned }}</td>
+          <td class="{{ 'stale' if r.stale else '' }}">{{ r.run.started_at|ago }}</td>
+          <td class="num">{{ r.run.duration_ms }}</td>
+          <td class="note">{{ r.run.error or '' }}</td>
+        {% else %}
+          <td><span class="status status-never">never run</span></td>
+          <td class="num">—</td><td>—</td><td class="num">—</td>
+          <td class="note">Configured, awaiting first crawl. Verify endpoint.</td>
+        {% endif %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <p class="hint">
+    Rows highlighted are <strong>stale</strong> (no successful run in 36h) or need verification.
+    A <code>suspect_low_yield</code> status means a crawl returned far fewer records than before —
+    existing listings were kept, not closed.
+  </p>
+</div>
+{% endblock %}

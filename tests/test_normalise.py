@@ -62,6 +62,14 @@ class TestRoleFamily:
     def test_professional_default(self):
         assert classify_role_family("HR Business Partner") == "professional"
 
+    def test_student_services_is_professional_not_student(self):
+        # "Student Services Officer" must not be mis-tagged as the student cohort.
+        assert classify_role_family("Student Services Officer") == "professional"
+        assert classify_role_family("Student Experience Coordinator") == "professional"
+
+    def test_genuine_student_role(self):
+        assert classify_role_family("PhD Scholarship in Marine Biology") == "student"
+
     def test_teaching_only(self):
         assert classify_role_family("Teaching-Focused Lecturer") == "teaching-only"
 

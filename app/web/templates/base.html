@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}Australian University Jobs Board{% endblock %}</title>
+  <meta name="description" content="Every open vacancy across the 42 Australian universities, in one searchable board.">
+  <link rel="stylesheet" href="/static/style.css">
+  <link rel="alternate" type="application/rss+xml" title="Jobs feed" href="/rss">
+</head>
+<body>
+  <a class="skip-link" href="#results">Skip to results</a>
+  <header class="site-header">
+    <div class="wrap">
+      <a class="brand" href="/">
+        <span class="brand-mark" aria-hidden="true">◍</span>
+        <span class="brand-name">AU<span class="brand-sep">/</span>UNI JOBS</span>
+      </a>
+      <p class="brand-tag">Open vacancies across all 42 Australian universities</p>
+      <nav class="site-nav">
+        <a href="/admin">Source health</a>
+        <a href="/api/docs">API</a>
+      </nav>
+    </div>
+  </header>
+  <main class="wrap">
+    {% block content %}{% endblock %}
+  </main>
+  <footer class="site-footer wrap">
+    <p>Listings link out to each university's own posting — always the primary source.
+       Data is indexed, not republished. See <code>CRAWLING.md</code> for conduct.</p>
+  </footer>
+  {% block scripts %}{% endblock %}
+</body>
+</html>
