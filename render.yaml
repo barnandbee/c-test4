@@ -1,0 +1,40 @@
+# Render Blueprint — deploys the jobs board on Render's free tier.
+# https://render.com/docs/blueprint-spec
+#
+# What it creates:
+#   * a managed Postgres database (free)
+#   * a Dockerised web service running the board + an in-process scheduler
+#
+# The web service seeds data on first boot, so the board is populated immediately.
+# The in-process scheduler (RUN_SCHEDULER_IN_WEB=true) handles ingestion, so no
+# separate paid worker is required. See DEPLOY.md.
+
+databases:
+  - name: jobs-db
+    plan: free
+    databaseName: jobs
+    user: jobs
+
+services:
+  - type: web
+    name: jobs-board
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    healthCheckPath: /healthz
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: jobs-db
+          property: connectionString
+      # Set a REAL, monitored address in the Render dashboard before crawling
+      # live — it goes in the crawler's User-Agent (see CRAWLING.md).
+      - key: CRAWLER_CONTACT_EMAIL
+        sync: false
+      - key: RUN_SCHEDULER_IN_WEB
+        value: "true"
+      - key: REFRESH_TIMES_PER_DAY
+        value: "3"
+      - key: RESPECT_ROBOTS
+        value: "true"

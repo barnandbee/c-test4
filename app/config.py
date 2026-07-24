@@ -43,6 +43,24 @@ class Settings(BaseSettings):
     # Scheduling: how many times/day the full refresh runs (kept low on purpose)
     refresh_times_per_day: int = 3
 
+    # Run the ingestion scheduler inside the web process (for hosts with no
+    # separate worker, e.g. Render's free tier). Off by default: docker-compose
+    # uses a dedicated `worker` service instead.
+    run_scheduler_in_web: bool = False
+
+    @property
+    def sqlalchemy_url(self) -> str:
+        """Normalise the DB URL so managed hosts work out of the box.
+
+        Render/Heroku hand out ``postgres://…``; SQLAlchemy 2.0 needs an explicit
+        driver (``postgresql+psycopg2://…``).
+        """
+        url = self.database_url
+        scheme, sep, rest = url.partition("://")
+        if sep and "+" not in scheme and scheme in {"postgres", "postgresql"}:
+            return f"postgresql+psycopg2://{rest}"
+        return url
+
     @property
     def user_agent(self) -> str:
         return (

@@ -27,7 +27,7 @@ n = s.scalar(select(func.count()).select_from(Listing)) or 0
 s.close()
 import sys; sys.exit(0 if n > 0 else 7)
 " || { echo 'seeding initial data…'; python -m app.seed; }
-    exec uvicorn app.main:app --host 0.0.0.0 --port 8000
+    exec uvicorn app.main:app --host 0.0.0.0 --port "${PORT:-8000}"
     ;;
   worker)
     wait_for_db

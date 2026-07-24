@@ -30,6 +30,12 @@ a full refresh shortly after start and then a few times a day.
 - JSON API: <http://localhost:8000/api/listings> · docs at `/api/docs`
 - RSS for any filter set: `/rss?<same query params as the board>`
 
+### Deploying
+
+A [`render.yaml`](./render.yaml) Blueprint deploys the board (managed Postgres +
+Dockerised web service with in-process scheduler) on Render's free tier. See
+[`DEPLOY.md`](./DEPLOY.md).
+
 ### Running locally without Docker
 
 ```bash

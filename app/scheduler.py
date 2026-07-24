@@ -26,19 +26,26 @@ def _refresh() -> None:
         log.exception("refresh failed")
 
 
-def main() -> None:
-    settings = get_settings()
-    init_db()
-    every_hours = max(1, 24 // max(1, settings.refresh_times_per_day))
+def interval_hours() -> int:
+    """Hours between refreshes, derived from REFRESH_TIMES_PER_DAY."""
+    return max(1, 24 // max(1, get_settings().refresh_times_per_day))
 
+
+def schedule_refresh(scheduler, run_at_startup: bool = True) -> None:
+    """Add the refresh jobs to any APScheduler instance (blocking or background)."""
+    hours = interval_hours()
+    scheduler.add_job(_refresh, "interval", hours=hours, id="refresh",
+                      max_instances=1, coalesce=True, misfire_grace_time=3600)
+    if run_at_startup:
+        scheduler.add_job(_refresh, "date", id="startup-refresh")
+    log.info("scheduled refresh every %sh (%s/day)", hours,
+             get_settings().refresh_times_per_day)
+
+
+def main() -> None:
+    init_db()
     scheduler = BlockingScheduler(timezone="UTC")
-    # Kick off ~1 min after boot so the DB/web are up, then on the interval.
-    scheduler.add_job(_refresh, "interval", hours=every_hours,
-                      next_run_time=None, id="refresh", max_instances=1,
-                      coalesce=True, misfire_grace_time=3600)
-    scheduler.add_job(_refresh, "date", id="startup-refresh")
-    log.info("scheduler up: refreshing every %sh (%s/day)", every_hours,
-             settings.refresh_times_per_day)
+    schedule_refresh(scheduler)
     scheduler.start()
 
 
