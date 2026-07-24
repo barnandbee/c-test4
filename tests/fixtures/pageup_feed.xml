@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Current opportunities</title>
+    <link>https://jobs.uwa.edu.au/cw/en/listing/</link>
+    <description>Latest vacancies</description>
+    <item>
+      <title>Senior Lecturer in Mechanical Engineering</title>
+      <link>https://jobs.uwa.edu.au/cw/en/job/880123/senior-lecturer-in-mechanical-engineering</link>
+      <description>&lt;p&gt;The School of Engineering seeks a Senior Lecturer (Academic Level C) to lead
+        undergraduate teaching in mechanical engineering. Continuing, full-time.&lt;/p&gt;</description>
+      <category>Academic Level C</category>
+      <pubDate>Fri, 18 Jul 2026 09:00:00 +0800</pubDate>
+    </item>
+    <item>
+      <title>Student Services Officer</title>
+      <link>https://jobs.uwa.edu.au/cw/en/job/880124/student-services-officer</link>
+      <description>&lt;p&gt;Provide frontline support to students. HEW 5, part-time, fixed-term.&lt;/p&gt;</description>
+      <category>HEW 5</category>
+      <pubDate>Mon, 21 Jul 2026 09:00:00 +0800</pubDate>
+    </item>
+  </channel>
+</rss>

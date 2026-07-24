@@ -1,0 +1,59 @@
+# =============================================================================
+# Discipline / field derivation from title + excerpt keywords. First match wins.
+# Deliberately coarse — a browsable facet, not an ANZSRC-precise taxonomy.
+# =============================================================================
+
+disciplines:
+  - field: "Health & Medicine"
+    keywords: ["nursing", "medicine", "medical", "health", "clinical", "pharmacy",
+               "dentistry", "physiotherapy", "psychology", "public health", "midwifery"]
+  - field: "Engineering & Technology"
+    keywords: ["engineering", "mechanical", "electrical", "civil", "software",
+               "robotics", "mechatronic", "aerospace", "mining engineer"]
+  - field: "Information & Computing"
+    keywords: ["computer science", "computing", "data science", "artificial intelligence",
+               "machine learning", "cyber", "information technology", "informatics", "software"]
+  - field: "Natural & Physical Sciences"
+    keywords: ["biology", "chemistry", "physics", "mathematics", "statistics",
+               "geology", "environmental science", "marine", "ecology", "astronomy"]
+  - field: "Business & Economics"
+    keywords: ["business", "economics", "finance", "accounting", "management",
+               "marketing", "commerce", "entrepreneurship", "supply chain"]
+  - field: "Law & Justice"
+    keywords: ["law", "legal", "justice", "criminology", "juris"]
+  - field: "Education"
+    keywords: ["education", "teaching", "pedagogy", "early childhood", "curriculum"]
+  - field: "Arts, Humanities & Social Sciences"
+    keywords: ["history", "philosophy", "sociology", "anthropology", "political",
+               "language", "literature", "linguistics", "media", "communication",
+               "creative arts", "music", "design", "humanities", "social science"]
+  - field: "Agriculture & Environment"
+    keywords: ["agriculture", "agricultural", "veterinary", "forestry",
+               "horticulture", "sustainability", "climate"]
+  - field: "Theology & Divinity"
+    keywords: ["theology", "divinity", "biblical", "ministry", "chaplain", "religious"]
+
+# Professional/administrative function fields (checked after academic disciplines
+# only if title clearly non-academic).
+professional_functions:
+  - field: "Library & Information Services"
+    keywords: ["library", "librarian", "archives", "records management"]
+  - field: "IT & Digital"
+    keywords: ["it support", "help desk", "service desk", "systems", "network",
+               "developer", "devops", "infrastructure"]
+  - field: "Student Services"
+    keywords: ["student services", "student experience", "admissions", "enrolment",
+               "student support", "wellbeing", "counselling"]
+  - field: "Finance & Procurement"
+    keywords: ["finance", "accounts", "procurement", "payroll", "audit"]
+  - field: "HR & People"
+    keywords: ["human resources", "people and culture", "recruitment", "talent",
+               "workforce", "organisational development"]
+  - field: "Facilities & Operations"
+    keywords: ["facilities", "grounds", "maintenance", "security", "cleaning",
+               "campus services", "logistics"]
+  - field: "Marketing & Communications"
+    keywords: ["marketing", "communications", "media", "brand", "content",
+               "social media", "public relations"]
+
+default: "Other / General"

@@ -1,0 +1,101 @@
+# =============================================================================
+# Level-band normalisation table  —  PLEASE REVIEW THIS MAPPING.
+#
+# Australian universities run two parallel classification scales. This table
+# collapses both into a single ordered `level_band` while the raw string is
+# always preserved on the listing (`classification_raw`).
+#
+# Ordered bands (low -> high):
+#   entry -> early-career -> mid -> senior -> leadership
+#
+# Matching is done by app/normalise/levels.py:
+#   1. Try the academic patterns (Level A-E).
+#   2. Try the professional patterns (HEW/HEO/HEP 1-10).
+#   3. Fall back to keyword heuristics (title words like "Professor", "Director").
+#   4. If nothing matches -> level_band = null (UI shows "unclassified").
+#
+# `scale` is recorded alongside the band so the UI can say "Academic Level B"
+# vs "HEW 7" honestly.
+# =============================================================================
+
+band_order: [entry, early-career, mid, senior, leadership]
+
+# ---- Academic scale: Level A (lowest) .. Level E (highest) -------------------
+# Matched case-insensitively. `aliases` are regex-ready alternative spellings.
+academic:
+  - level: "A"
+    band: early-career
+    label: "Academic Level A"
+    typical_role: "Associate Lecturer / Postdoctoral Research Fellow"
+    aliases: ["level a", "academic level a", "alevel a", "\\bacad(?:emic)?\\s*a\\b"]
+  - level: "B"
+    band: mid
+    label: "Academic Level B"
+    typical_role: "Lecturer"
+    aliases: ["level b", "academic level b", "\\bacad(?:emic)?\\s*b\\b"]
+  - level: "C"
+    band: senior
+    label: "Academic Level C"
+    typical_role: "Senior Lecturer"
+    aliases: ["level c", "academic level c", "\\bacad(?:emic)?\\s*c\\b"]
+  - level: "D"
+    band: leadership
+    label: "Academic Level D"
+    typical_role: "Associate Professor"
+    aliases: ["level d", "academic level d", "\\bacad(?:emic)?\\s*d\\b"]
+  - level: "E"
+    band: leadership
+    label: "Academic Level E"
+    typical_role: "Professor"
+    aliases: ["level e", "academic level e", "\\bacad(?:emic)?\\s*e\\b"]
+
+# ---- Professional / general staff scale: HEW/HEO/HEP 1..10 ------------------
+# `prefix_aliases` are the institution-specific names for the same scale.
+professional:
+  prefix_aliases: ["hew", "heo", "hep", "geo", "uom", "general staff level", "professional level", "level"]
+  bands:
+    - levels: [1, 2, 3]
+      band: entry
+      label_fmt: "HEW {n}"
+    - levels: [4, 5]
+      band: early-career
+      label_fmt: "HEW {n}"
+    - levels: [6, 7]
+      band: mid
+      label_fmt: "HEW {n}"
+    - levels: [8, 9]
+      band: senior
+      label_fmt: "HEW {n}"
+    - levels: [10]
+      band: leadership
+      label_fmt: "HEW {n}"
+
+# Above-award / senior-executive markers -> always leadership.
+senior_executive_markers:
+  - "senior manager"
+  - "above hew 10"
+  - "above award"
+  - "seb"          # senior executive band
+  - "executive level"
+  - "sms"          # senior management structure
+
+# ---- Keyword fallback (only used when no scale token is found) ---------------
+# Ordered most-senior first so "Deputy Vice-Chancellor" wins over "Lecturer".
+keyword_fallback:
+  - band: leadership
+    keywords: ["vice-chancellor", "vice chancellor", "deputy vice", "pro vice",
+               "provost", "executive dean", "chief operating", "chief financial",
+               "director", "head of school", "dean ", "professor",
+               "associate professor"]  # Assoc Prof = Academic Level D = leadership
+  - band: senior
+    keywords: ["senior lecturer", "principal ", "senior manager",
+               "associate director", "senior research fellow"]
+  - band: mid
+    keywords: ["lecturer", "research fellow", "manager", "coordinator",
+               "senior officer", "senior analyst", "advisor", "adviser"]
+  - band: early-career
+    keywords: ["associate lecturer", "postdoctoral", "post-doctoral", "postdoc",
+               "research assistant", "officer", "analyst", "graduate"]
+  - band: entry
+    keywords: ["assistant", "trainee", "cadet", "casual", "attendant",
+               "administration officer", "receptionist"]
