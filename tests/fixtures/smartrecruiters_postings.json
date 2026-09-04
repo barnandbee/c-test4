@@ -1,0 +1,19 @@
+{
+  "totalFound": 2,
+  "content": [
+    {
+      "id": "743999000123456",
+      "name": "Marketing Coordinator",
+      "releasedDate": "2026-07-20T00:00:00.000Z",
+      "location": {"city": "Melbourne", "region": "Victoria", "remote": false},
+      "typeOfEmployment": {"label": "Full-time"}
+    },
+    {
+      "id": "743999000123457",
+      "name": "Data Engineer (Remote)",
+      "releasedDate": "2026-07-22T00:00:00.000Z",
+      "location": {"city": "Sydney", "region": "New South Wales", "remote": true},
+      "typeOfEmployment": {"label": "Contract"}
+    }
+  ]
+}

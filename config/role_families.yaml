@@ -1,0 +1,51 @@
+# =============================================================================
+# Role-family classification. Ordered — first match wins, so put the most
+# specific / highest-signal families first. Matched against the title (and,
+# where available, the classification_raw + excerpt) case-insensitively.
+#
+# Families (per brief): academic | professional | research | technical |
+#                       teaching-only | executive | student
+# =============================================================================
+
+families:
+  - family: executive
+    keywords: ["vice-chancellor", "vice chancellor", "deputy vice", "pro vice",
+               "provost", "executive dean", "chief operating officer", "chief financial",
+               "chief ", "executive director", "head of school", "dean of "]
+
+  - family: research
+    # research-designated roles even if they carry an academic level
+    keywords: ["research fellow", "postdoctoral", "post-doctoral", "postdoc",
+               "research associate", "research assistant", "research officer",
+               "research scientist", "research-only", "research only",
+               "principal research", "senior research"]
+
+  - family: teaching-only
+    keywords: ["teaching-focused", "teaching focused", "teaching-only",
+               "teaching only", "education-focused", "scholarly teaching",
+               "sessional academic", "casual academic"]
+
+  - family: academic
+    keywords: ["lecturer", "associate professor", "professor", "academic",
+               "chair in ", "chair of ", "fellow in "]
+
+  - family: technical
+    keywords: ["technician", "technical officer", "laboratory", "lab manager",
+               "workshop", "instrument", "engineer", "developer", "programmer",
+               "systems administrator", "network", "audiovisual", "av technician"]
+
+  - family: student
+    # Genuine student-cohort roles only — NOT "student services"/"student
+    # experience" professional roles (those fall through to professional).
+    keywords: ["phd scholarship", "phd candidate", "graduate research",
+               "vacation research", "research scholarship", "hdr scholarship"]
+
+  - family: professional
+    # catch-all for general/professional staff — LAST so it doesn't shadow others
+    keywords: ["officer", "coordinator", "manager", "administrator", "advisor",
+               "adviser", "analyst", "consultant", "assistant", "specialist",
+               "partner", "librarian", "accountant", "marketing", "finance",
+               "human resources", "hr ", "communications", "project"]
+
+# If nothing matches -> role_family = "professional" (the sector's default bucket)
+default: professional

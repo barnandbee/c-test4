@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block content %}
+<form id="filters" class="layout" method="get" action="/" role="search" aria-label="Job filters">
+  <aside class="filters" aria-label="Filters">
+    <div class="filters-head">
+      <h2>Filter</h2>
+      <a class="reset" href="/">Clear all</a>
+    </div>
+
+    <div class="field">
+      <label for="q">Search title &amp; excerpt</label>
+      <input type="search" id="q" name="q" value="{{ selected.scalar.q }}"
+             placeholder="e.g. machine learning, nursing" autocomplete="off">
+    </div>
+
+    <fieldset class="field">
+      <legend>Quick presets</legend>
+      <div class="chips">
+        {% for gk, gname in groups.items() %}
+        <label class="chip">
+          <input type="checkbox" name="group" value="{{ gk }}"
+                 {% if gk in selected.group %}checked{% endif %}>
+          <span>{{ gk|upper }}</span>
+        </label>
+        {% endfor %}
+      </div>
+      <p class="hint">Go8, ATN, IRU &amp; Regional Universities Network.</p>
+    </fieldset>
+
+    <details class="field" open>
+      <summary>Posted</summary>
+      <div class="radio-row">
+        <label class="radio"><input type="radio" name="posted_within" value=""
+          {% if not selected.scalar.posted_within %}checked{% endif %}> Any time</label>
+        {% for val, label in posted_windows %}
+        <label class="radio"><input type="radio" name="posted_within" value="{{ val }}"
+          {% if selected.scalar.posted_within == val %}checked{% endif %}> {{ label }}</label>
+        {% endfor %}
+      </div>
+      <label class="check"><input type="checkbox" name="closing_soon" value="1"
+        {% if selected.scalar.closing_soon %}checked{% endif %}> Closing within 7 days</label>
+    </details>
+
+    <details class="field" open>
+      <summary>State / territory</summary>
+      <div class="grid-2">
+        {% for st in states %}
+        <label class="check"><input type="checkbox" name="state" value="{{ st }}"
+          {% if st in selected.state %}checked{% endif %}> {{ st }}</label>
+        {% endfor %}
+      </div>
+    </details>
+
+    <details class="field" open>
+      <summary>Role family</summary>
+      {% for rf in role_families %}
+      <label class="check"><input type="checkbox" name="role_family" value="{{ rf }}"
+        {% if rf in selected.role_family %}checked{% endif %}> {{ rf|replace('-', ' ')|capitalize }}</label>
+      {% endfor %}
+    </details>
+
+    <details class="field" open>
+      <summary>Level band</summary>
+      {% for lb in level_bands %}
+      <label class="check"><input type="checkbox" name="level_band" value="{{ lb }}"
+        {% if lb in selected.level_band %}checked{% endif %}> {{ lb|replace('-', ' ')|capitalize }}</label>
+      {% endfor %}
+      <label class="sub" for="classification">Raw classification</label>
+      <input type="text" id="classification" name="classification" class="mini"
+             value="{{ selected.scalar.classification }}" placeholder="e.g. HEW 7, Level B">
+    </details>
+
+    <details class="field">
+      <summary>Work type &amp; fraction</summary>
+      {% for wt in work_types %}
+      <label class="check"><input type="checkbox" name="work_type" value="{{ wt }}"
+        {% if wt in selected.work_type %}checked{% endif %}> {{ wt|replace('-', ' ')|capitalize }}</label>
+      {% endfor %}
+      <hr>
+      {% for tf in time_fractions %}
+      <label class="check"><input type="checkbox" name="time_fraction" value="{{ tf }}"
+        {% if tf in selected.time_fraction %}checked{% endif %}> {{ tf|replace('-', ' ')|capitalize }}</label>
+      {% endfor %}
+      <label class="check"><input type="checkbox" name="remote" value="1"
+        {% if selected.scalar.remote %}checked{% endif %}> Remote / hybrid</label>
+    </details>
+
+    <details class="field">
+      <summary>Salary (AUD)</summary>
+      <p class="hint">{{ result.facets.salary_pct }}% of open listings publish a salary.</p>
+      <div class="salary-row">
+        <input type="number" name="salary_min" inputmode="numeric" min="0" step="1000"
+               value="{{ selected.scalar.salary_min }}" placeholder="min" aria-label="Minimum salary">
+        <span aria-hidden="true">–</span>
+        <input type="number" name="salary_max" inputmode="numeric" min="0" step="1000"
+               value="{{ selected.scalar.salary_max }}" placeholder="max" aria-label="Maximum salary">
+      </div>
+      <label class="check"><input type="checkbox" name="has_salary" value="1"
+        {% if selected.scalar.has_salary %}checked{% endif %}> Only listings with a published salary</label>
+    </details>
+
+    {% if facet_values.disciplines %}
+    <details class="field">
+      <summary>Discipline</summary>
+      <div class="scroll">
+      {% for d in facet_values.disciplines %}
+      <label class="check"><input type="checkbox" name="discipline" value="{{ d }}"
+        {% if d in selected.discipline %}checked{% endif %}> {{ d }}</label>
+      {% endfor %}
+      </div>
+    </details>
+    {% endif %}
+
+    <details class="field">
+      <summary>University</summary>
+      <div class="scroll">
+      {% for u in universities %}
+      <label class="check"><input type="checkbox" name="university" value="{{ u.slug }}"
+        {% if u.slug in selected.university %}checked{% endif %}> {{ u.name }}</label>
+      {% endfor %}
+      </div>
+    </details>
+
+    <div class="filters-foot">
+      <button type="submit" class="btn-primary">Apply filters</button>
+    </div>
+  </aside>
+
+  <section class="results-col">
+    {% include "results.html" %}
+  </section>
+</form>
+{% endblock %}
+
+{% block scripts %}<script src="/static/app.js" defer></script>{% endblock %}

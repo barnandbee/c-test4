@@ -1,0 +1,531 @@
+# =============================================================================
+# University source configuration — the heart of the "config not code" design.
+#
+# Adding a university = adding a record here. No new Python required unless the
+# platform family isn't yet supported by an adapter.
+#
+# IMPORTANT — endpoint confidence:
+#   This config was compiled from public web search + known Australian HE ATS
+#   URL patterns. The build environment has NO outbound network access to these
+#   domains, so endpoints are RESEARCHED, NOT LIVE-VERIFIED. `confidence` reflects
+#   that. On first deployment run `python -m app.ingest.runner --verify` to
+#   confirm each endpoint and adjust params. See DISCOVERY.md.
+#
+# Fields:
+#   slug            stable identifier (used in URLs + the id hash)
+#   name            canonical employer name
+#   state           ACT NSW NT QLD SA TAS VIC WA
+#   groups          any of: go8, atn, iru, run  (drives the UI presets)
+#   adapter         which platform adapter handles this uni
+#   careers_url     human-facing careers landing page (shown in admin)
+#   params          adapter-specific connection parameters
+#   confidence      high | medium | low  (of the platform+endpoint identification)
+#   notes           anything a maintainer fixing this adapter should know
+#
+# Adapter param contracts:
+#   pageup:         listing_url (required), feed_url (optional RSS/JSON)
+#   workday:        tenant, dc (data-center host, e.g. wd3/wd5/wd105), site
+#   nganet:         base_url, board_id
+#   smartrecruiters: company_id
+#   html_generic:   listing_url, row_selector, title_selector, link_selector,
+#                   location_selector, date_selector  (CSS selectors)
+# =============================================================================
+
+universities:
+  # ------------------------------- ACT -------------------------------
+  - slug: anu
+    name: Australian National University
+    state: ACT
+    groups: [go8]
+    adapter: pageup
+    careers_url: https://jobs.anu.edu.au/
+    params:
+      listing_url: https://jobs.anu.edu.au/cw/en/listing/
+      feed_url: https://jobs.anu.edu.au/cw/en/listing/?rss=1
+    confidence: high
+    notes: Classic PageUp vanity domain. RSS commonly available on PageUp cw sites.
+
+  - slug: canberra
+    name: University of Canberra
+    state: ACT
+    groups: [iru]
+    adapter: pageup
+    careers_url: https://www.canberra.edu.au/about-uc/careers-at-uc
+    params:
+      listing_url: https://jobs.canberra.edu.au/cw/en/listing/
+    confidence: medium
+    notes: Careers landing redirects to a PageUp instance; confirm vanity host.
+
+  # ------------------------------- NSW -------------------------------
+  - slug: acu
+    name: Australian Catholic University
+    state: NSW
+    groups: []
+    adapter: pageup
+    careers_url: https://www.acu.edu.au/about-acu/careers-at-acu
+    params:
+      listing_url: https://careers.acu.edu.au/cw/en/listing/
+    confidence: medium
+    notes: ACU listed on THEunijobs; PageUp most likely. Multi-state employer, HQ NSW.
+
+  - slug: aut
+    name: Australian University of Theology
+    state: NSW
+    groups: []
+    adapter: html_generic
+    careers_url: https://www.aut.edu.au/
+    params:
+      listing_url: https://www.aut.edu.au/about/employment
+      row_selector: "main article, .vacancy, .job-listing li"
+      title_selector: "h2 a, h3 a, a"
+      link_selector: "a"
+      location_selector: ".location"
+      date_selector: "time, .date"
+    confidence: low
+    notes: >
+      Small institution (formerly Australian College of Theology), bespoke site.
+      Selectors are a best guess; almost certainly needs tuning on first run.
+      A documented gap candidate.
+
+  - slug: avondale
+    name: Avondale University
+    state: NSW
+    groups: []
+    adapter: html_generic
+    careers_url: https://www.avondale.edu.au/employment
+    params:
+      listing_url: https://www.avondale.edu.au/employment/
+      row_selector: ".vacancy, article, .employment-listing li"
+      title_selector: "h2 a, h3 a, a"
+      link_selector: "a"
+      location_selector: ".location"
+      date_selector: "time, .date"
+    confidence: low
+    notes: Small institution, bespoke page. Documented gap candidate.
+
+  - slug: csu
+    name: Charles Sturt University
+    state: NSW
+    groups: [run]
+    adapter: pageup
+    careers_url: https://www.csu.edu.au/jobs
+    params:
+      listing_url: https://jobs.csu.edu.au/cw/en/listing/
+    confidence: medium
+    notes: PageUp vanity host likely jobs.csu.edu.au.
+
+  - slug: macquarie
+    name: Macquarie University
+    state: NSW
+    groups: []
+    adapter: pageup
+    careers_url: https://jobs.mq.edu.au/
+    params:
+      listing_url: https://jobs.mq.edu.au/cw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp (jobs.mq.edu.au).
+
+  - slug: scu
+    name: Southern Cross University
+    state: NSW
+    groups: [run]
+    adapter: pageup
+    careers_url: https://www.scu.edu.au/careers-at-scu/
+    params:
+      listing_url: https://jobs.scu.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: une
+    name: University of New England
+    state: NSW
+    groups: [run]
+    adapter: pageup
+    careers_url: https://careers.une.edu.au/
+    params:
+      listing_url: https://careers.une.edu.au/cw/en/listing/
+    confidence: high
+    notes: careers.une.edu.au is a PageUp cw host.
+
+  - slug: unsw
+    name: UNSW Sydney
+    state: NSW
+    groups: [go8]
+    adapter: pageup
+    careers_url: https://www.jobs.unsw.edu.au/
+    params:
+      listing_url: https://external-careers.jobs.unsw.edu.au/cw/en/listing/
+      feed_url: https://external-careers.jobs.unsw.edu.au/cw/en/listing/?rss=1
+    confidence: medium
+    notes: PageUp. UNSW uses an external-careers cw host; confirm exact subdomain.
+
+  - slug: newcastle
+    name: University of Newcastle
+    state: NSW
+    groups: [atn]
+    adapter: pageup
+    careers_url: https://www.newcastle.edu.au/about-uon/careers
+    params:
+      listing_url: https://careers.newcastle.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: sydney
+    name: University of Sydney
+    state: NSW
+    groups: [go8]
+    adapter: workday
+    careers_url: https://www.sydney.edu.au/about-us/careers-at-sydney.html
+    params:
+      tenant: usyd
+      dc: wd3
+      site: USYD_EXTERNAL_CAREER_SITE
+    confidence: high
+    notes: Confirmed Workday. Endpoint POST /wday/cxs/usyd/USYD_EXTERNAL_CAREER_SITE/jobs
+
+  - slug: uts
+    name: University of Technology Sydney
+    state: NSW
+    groups: [atn]
+    adapter: pageup
+    careers_url: https://www.uts.edu.au/about/careers-uts
+    params:
+      listing_url: https://careers.uts.edu.au/cw/en/listing/
+    confidence: low
+    notes: >
+      Platform not confirmed by research. PageUp assumed. Verify on first run —
+      may be Workday or bespoke.
+
+  - slug: uow
+    name: University of Wollongong
+    state: NSW
+    groups: []
+    adapter: pageup
+    careers_url: https://www.uow.edu.au/about/jobs/
+    params:
+      listing_url: https://jobs.uow.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: wsu
+    name: Western Sydney University
+    state: NSW
+    groups: [iru]
+    adapter: pageup
+    careers_url: https://www.westernsydney.edu.au/careers
+    params:
+      listing_url: https://uws.nga.net.au/cp/  # NGA candidate; see notes
+    confidence: low
+    notes: >
+      WSU has historically used NGA.NET (uws.nga.net.au). Marked pageup->recheck:
+      switch adapter to `nganet` with board_id if confirmed. Left as low pending verify.
+
+  # ------------------------------- NT --------------------------------
+  - slug: cdu
+    name: Charles Darwin University
+    state: NT
+    groups: [iru]
+    adapter: pageup
+    careers_url: https://www.cdu.edu.au/careers-cdu
+    params:
+      listing_url: https://jobs.cdu.edu.au/cw/en/listing/
+    confidence: medium
+
+  # ------------------------------- QLD -------------------------------
+  - slug: bond
+    name: Bond University
+    state: QLD
+    groups: []
+    adapter: pageup
+    careers_url: https://bond.edu.au/about-bond/careers-bond
+    params:
+      listing_url: https://careers.bond.edu.au/cw/en/listing/
+    confidence: low
+    notes: Private university; platform unconfirmed. Verify on first run.
+
+  - slug: cqu
+    name: CQUniversity
+    state: QLD
+    groups: [run]
+    adapter: pageup
+    careers_url: https://jobs.cqu.edu.au/
+    params:
+      listing_url: https://jobs.cqu.edu.au/cw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp vanity (jobs.cqu.edu.au).
+
+  - slug: griffith
+    name: Griffith University
+    state: QLD
+    groups: [iru]
+    adapter: pageup
+    careers_url: https://www.griffith.edu.au/careers
+    params:
+      listing_url: https://jobs.griffith.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: jcu
+    name: James Cook University
+    state: QLD
+    groups: [iru]
+    adapter: pageup
+    careers_url: https://www.jcu.edu.au/careers-at-jcu
+    params:
+      listing_url: https://secure.dc2.pageuppeople.com/apply/822/caw/  # placeholder
+    confidence: low
+    notes: PageUp likely but cw host unconfirmed. Verify listing_url.
+
+  - slug: qut
+    name: Queensland University of Technology
+    state: QLD
+    groups: []
+    adapter: pageup
+    careers_url: https://www.qut.edu.au/about/working-at-qut
+    params:
+      listing_url: https://qut.nga.net.au/cp/  # NGA candidate; see notes
+    confidence: low
+    notes: >
+      QUT has used NGA.NET (qut.nga.net.au). If confirmed, switch adapter to
+      `nganet`. Left low pending verify.
+
+  - slug: uq
+    name: University of Queensland
+    state: QLD
+    groups: [go8]
+    adapter: workday
+    careers_url: https://about.uq.edu.au/careers
+    params:
+      tenant: uq
+      dc: wd3
+      site: uqcareers
+    confidence: high
+    notes: Confirmed Workday (uq.wd3.myworkdayjobs.com/uqcareers).
+
+  - slug: unisq
+    name: University of Southern Queensland
+    state: QLD
+    groups: [run]
+    adapter: pageup
+    careers_url: https://www.unisq.edu.au/careers
+    params:
+      listing_url: https://jobs.usq.edu.au/cw/en/listing/
+    confidence: medium
+    notes: Rebranded UniSQ; legacy usq.edu.au hosts may still serve the ATS.
+
+  - slug: unisc
+    name: University of the Sunshine Coast
+    state: QLD
+    groups: []
+    adapter: pageup
+    careers_url: https://www.usc.edu.au/about/work-at-unisc
+    params:
+      listing_url: https://jobs.usc.edu.au/cw/en/listing/
+    confidence: medium
+
+  # ------------------------------- SA --------------------------------
+  - slug: adelaide
+    name: Adelaide University
+    state: SA
+    groups: [go8]
+    adapter: pageup
+    careers_url: https://www.adelaideuni.edu.au/careers
+    params:
+      listing_url: https://careers.pageuppeople.com/1220/cw/en/listing/
+      feed_url: https://careers.pageuppeople.com/1220/cw/en/listing/?rss=1
+    confidence: high
+    notes: >
+      Merged entity (Adelaide + UniSA, Jan 2026). Confirmed PageUp client 1220
+      (careers.pageuppeople.com/1220). Inherits Go8 status from Adelaide.
+
+  - slug: flinders
+    name: Flinders University
+    state: SA
+    groups: []
+    adapter: pageup
+    careers_url: https://jobs.flinders.edu.au/
+    params:
+      listing_url: https://jobs.flinders.edu.au/cw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp vanity (jobs.flinders.edu.au).
+
+  - slug: torrens
+    name: Torrens University Australia
+    state: SA
+    groups: []
+    adapter: workday
+    careers_url: https://www.torrens.edu.au/about/career-opportunities
+    params:
+      tenant: strayer
+      dc: wd1
+      site: ANZ_TUA_External1
+    confidence: high
+    notes: >
+      Confirmed Workday under Strategic Education (Strayer) tenant
+      (strayer.wd1.myworkdayjobs.com/ANZ_TUA_External1).
+
+  # ------------------------------- TAS -------------------------------
+  - slug: utas
+    name: University of Tasmania
+    state: TAS
+    groups: []
+    adapter: pageup
+    careers_url: https://www.utas.edu.au/jobs
+    params:
+      listing_url: https://careers.utas.edu.au/cw/en/listing/
+    confidence: medium
+
+  # ------------------------------- VIC -------------------------------
+  - slug: deakin
+    name: Deakin University
+    state: VIC
+    groups: [atn]
+    adapter: pageup
+    careers_url: https://www.deakin.edu.au/about-deakin/careers-at-deakin
+    params:
+      listing_url: https://careers.deakin.edu.au/cw/en/listing/
+    confidence: medium
+    notes: careers.deakin.edu.au confirmed as the careers host; PageUp assumed.
+
+  - slug: federation
+    name: Federation University Australia
+    state: VIC
+    groups: [run]
+    adapter: pageup
+    careers_url: https://federation.edu.au/careers
+    params:
+      listing_url: https://jobs.federation.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: latrobe
+    name: La Trobe University
+    state: VIC
+    groups: [iru]
+    adapter: pageup
+    careers_url: https://www.latrobe.edu.au/jobs
+    params:
+      listing_url: https://careers.latrobe.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: monash
+    name: Monash University
+    state: VIC
+    groups: [go8]
+    adapter: pageup
+    careers_url: https://www.monash.edu/jobs/jobs-at-monash
+    params:
+      listing_url: https://careers.pageuppeople.com/513/cw/en/listing/
+    confidence: low
+    notes: >
+      Historically PageUp client 513. A 2018 breach led Monash to disable PageUp;
+      current platform must be re-verified — may now be Workday. Marked low.
+
+  - slug: rmit
+    name: RMIT University
+    state: VIC
+    groups: [atn]
+    adapter: pageup
+    careers_url: https://www.rmit.edu.au/careers
+    params:
+      listing_url: https://careers.rmit.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: swinburne
+    name: Swinburne University of Technology
+    state: VIC
+    groups: []
+    adapter: pageup
+    careers_url: https://www.swinburne.edu.au/about/careers-at-swinburne/
+    params:
+      listing_url: https://careers.swinburne.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: divinity
+    name: University of Divinity
+    state: VIC
+    groups: []
+    adapter: html_generic
+    careers_url: https://www.divinity.edu.au/about/employment/
+    params:
+      listing_url: https://vox.divinity.edu.au/vacancies/
+      row_selector: "article, .vacancy, .post"
+      title_selector: "h2 a, h3 a, .entry-title a"
+      link_selector: "h2 a, h3 a, .entry-title a, a"
+      location_selector: ".location"
+      date_selector: "time, .published, .date"
+    confidence: medium
+    notes: Confirmed bespoke WordPress vacancies page (vox.divinity.edu.au/vacancies).
+
+  - slug: melbourne
+    name: University of Melbourne
+    state: VIC
+    groups: [go8]
+    adapter: workday
+    careers_url: https://about.unimelb.edu.au/careers
+    params:
+      tenant: unimelb
+      dc: wd105
+      site: UoM_External_Career
+    confidence: high
+    notes: Confirmed Workday (unimelb.wd105.myworkdayjobs.com/UoM_External_Career).
+
+  - slug: vu
+    name: Victoria University
+    state: VIC
+    groups: []
+    adapter: pageup
+    careers_url: https://www.vu.edu.au/about-vu/careers-at-vu
+    params:
+      listing_url: https://careers.vu.edu.au/cw/en/listing/
+    confidence: medium
+
+  # ------------------------------- WA --------------------------------
+  - slug: curtin
+    name: Curtin University
+    state: WA
+    groups: [atn]
+    adapter: pageup
+    careers_url: https://staff.curtin.edu.au/job-vacancies/
+    params:
+      listing_url: https://careers.curtin.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: ecu
+    name: Edith Cowan University
+    state: WA
+    groups: []
+    adapter: pageup
+    careers_url: https://www.ecu.edu.au/careers
+    params:
+      listing_url: https://jobs.ecu.edu.au/cw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp vanity (jobs.ecu.edu.au).
+
+  - slug: murdoch
+    name: Murdoch University
+    state: WA
+    groups: [iru]
+    adapter: pageup
+    careers_url: https://www.murdoch.edu.au/careers
+    params:
+      listing_url: https://jobs.murdoch.edu.au/cw/en/listing/
+    confidence: medium
+
+  - slug: notredame
+    name: University of Notre Dame Australia
+    state: WA
+    groups: []
+    adapter: pageup
+    careers_url: https://www.notredame.edu.au/about/employment
+    params:
+      listing_url: https://careers.nd.edu.au/cw/en/listing/
+    confidence: low
+    notes: Private university; platform unconfirmed. Verify on first run.
+
+  - slug: uwa
+    name: University of Western Australia
+    state: WA
+    groups: [go8]
+    adapter: pageup
+    careers_url: https://www.uwa.edu.au/jobs
+    params:
+      listing_url: https://jobs.uwa.edu.au/cw/en/listing/
+      feed_url: https://jobs.uwa.edu.au/cw/en/listing/?rss=1
+    confidence: high
+    notes: Confirmed PageUp vanity (jobs.uwa.edu.au).

@@ -1,0 +1,29 @@
+{
+  "total": 3,
+  "jobPostings": [
+    {
+      "title": "Associate Professor, Data Science",
+      "externalPath": "/job/Camperdown-Campus/Associate-Professor--Data-Science_R0045123",
+      "locationsText": "Camperdown Campus",
+      "postedOn": "Posted Today",
+      "bulletFields": ["R0045123", "Full time", "Continuing"],
+      "jobRequisitionId": "R0045123"
+    },
+    {
+      "title": "Research Assistant, Immunology",
+      "externalPath": "/job/Westmead/Research-Assistant--Immunology_R0045200",
+      "locationsText": "Westmead",
+      "postedOn": "Posted 5 Days Ago",
+      "bulletFields": ["R0045200", "Part time", "Fixed term"],
+      "jobRequisitionId": "R0045200"
+    },
+    {
+      "title": "Manager, Financial Operations",
+      "externalPath": "/job/Darlington/Manager--Financial-Operations_R0045300",
+      "locationsText": "Darlington",
+      "postedOn": "Posted 30+ Days Ago",
+      "bulletFields": ["R0045300", "Full time", "Continuing", "HEW 9"],
+      "jobRequisitionId": "R0045300"
+    }
+  ]
+}
