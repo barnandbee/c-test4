@@ -1,5 +1,46 @@
 {% extends "base.html" %}
 {% block content %}
+{% if featured %}
+<section class="featured" aria-label="Featured roles">
+  <div class="featured-head">
+    <h2>Featured roles <span class="featured-sub">with a recruiter interview</span></h2>
+  </div>
+  <div class="featured-grid">
+    {% for item in featured %}
+    {% set l = item.listing %}{% set fj = item.featured %}
+    <article class="feat-card">
+      <div class="feat-video">
+        {% if fj.video_url %}
+          <video controls preload="none" playsinline>
+            <source src="{{ fj.video_url }}" type="video/mp4">
+          </video>
+        {% else %}
+          <div class="feat-video-ph" role="img" aria-label="Recruiter interview coming soon">
+            <span class="play" aria-hidden="true">▶</span>
+            <span class="ph-text">Recruiter interview — coming soon</span>
+          </div>
+        {% endif %}
+      </div>
+      <div class="feat-body">
+        <div class="feat-top">
+          <span class="uni">{{ l.university }}</span>
+          <span class="state-badge">{{ l.state }}</span>
+          {% if l.level_band %}<span class="band band-{{ l.level_band }}">{{ l.level_band|replace('-',' ') }}</span>{% endif %}
+        </div>
+        <h3 class="feat-title"><a href="{{ l.url }}" target="_blank" rel="noopener noreferrer nofollow">{{ l.title }}</a></h3>
+        {% if fj.headline %}<p class="feat-blurb">{{ fj.headline }}</p>{% endif %}
+        <div class="feat-meta">
+          {% if l.campus_location %}<span>{{ l.campus_location }}</span>{% endif %}
+          {% if l.classification_raw %}<span>{{ l.classification_raw }}</span>{% endif %}
+          <span>{{ l.closes_at|until }}</span>
+        </div>
+        <a class="feat-cta" href="{{ l.url }}" target="_blank" rel="noopener noreferrer nofollow">View the role →</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
 <form id="filters" class="layout" method="get" action="/" role="search" aria-label="Job filters">
   <aside class="filters" aria-label="Filters">
     <div class="filters-head">

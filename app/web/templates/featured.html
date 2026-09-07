@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Featured roles — admin{% endblock %}
+{% block content %}
+<div class="admin">
+  <h1>Featured roles</h1>
+  <p class="admin-summary">
+    Pick up to 3 live listings to feature at the top of the board with a recruiter
+    interview. Featured roles still appear in the normal list.
+    <a href="/admin">← Source health</a> · <a href="/admin/analytics">Analytics →</a>
+  </p>
+
+  {% if not trigger_enabled %}
+    <p class="banner bad">Set <code>ADMIN_TOKEN</code> in the service environment to manage featured roles.</p>
+  {% endif %}
+  {% if flash == 'added' %}<p class="banner ok">Added to featured.</p>{% endif %}
+  {% if flash == 'saved' %}<p class="banner ok">Saved.</p>{% endif %}
+  {% if flash == 'removed' %}<p class="banner">Removed from featured.</p>{% endif %}
+  {% if flash == 'bad-token' %}<p class="banner bad">Wrong admin token.</p>{% endif %}
+
+  <h2 class="sec">Current featured <span class="muted">({{ featured|length }})</span></h2>
+  {% if featured %}
+  <div class="feat-admin-list">
+    {% for item in featured %}
+    {% set fj = item.featured %}{% set l = item.listing %}
+    <div class="feat-admin-row">
+      <div class="feat-admin-info">
+        {% if l %}
+          <strong>{{ l.title }}</strong> — {{ l.university }}
+          <span class="state-badge sm">{{ l.state }}</span>
+          <span class="status status-{{ l.status }}">{{ l.status }}</span>
+        {% else %}
+          <strong>(listing no longer in database)</strong>
+          <span class="status status-failed">missing</span>
+        {% endif %}
+        <div class="muted" style="font-size:12px">listing id: <code>{{ fj.listing_id }}</code></div>
+      </div>
+      <form method="post" action="/admin/featured/update" class="feat-admin-edit">
+        <input type="hidden" name="fid" value="{{ fj.id }}">
+        <label>Position <input type="number" name="position" min="1" max="9" value="{{ fj.position }}" style="width:56px"></label>
+        <label>Video URL (mp4) <input type="url" name="video_url" value="{{ fj.video_url or '' }}" placeholder="https://…/interview.mp4"></label>
+        <label>Blurb <input type="text" name="headline" value="{{ fj.headline or '' }}" placeholder="Why this role is worth a look"></label>
+        <input type="password" name="token" placeholder="admin token" required autocomplete="off">
+        <button type="submit" class="btn-primary">Save</button>
+      </form>
+      <form method="post" action="/admin/featured/remove" class="feat-admin-remove"
+            onsubmit="this.token.value=this.token.value">
+        <input type="hidden" name="fid" value="{{ fj.id }}">
+        <input type="password" name="token" placeholder="token" required autocomplete="off" style="width:110px">
+        <button type="submit" class="btn-ghost">Remove</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+    <p class="hint">No featured roles yet. Search below and add one.</p>
+  {% endif %}
+
+  <h2 class="sec">Add a role</h2>
+  <form method="get" action="/admin/featured" class="feat-search">
+    <input type="search" name="q" value="{{ q }}" placeholder="Search live listings by title / keyword" autofocus>
+    <button type="submit" class="btn-primary">Search</button>
+  </form>
+  {% if q %}
+    {% if matches %}
+    <table class="health feat-matches">
+      <thead><tr><th>Title</th><th>University</th><th>Level</th><th></th></tr></thead>
+      <tbody>
+        {% for l in matches %}
+        <tr>
+          <td>{{ l.title }}</td>
+          <td>{{ l.university }} <span class="state-badge sm">{{ l.state }}</span></td>
+          <td>{{ l.classification_raw or l.level_band or '' }}</td>
+          <td>
+            <form method="post" action="/admin/featured/add" class="feat-add-inline">
+              <input type="hidden" name="listing_id" value="{{ l.id }}">
+              <input type="password" name="token" placeholder="token" required autocomplete="off" style="width:110px">
+              <button type="submit" class="btn-primary">Feature</button>
+            </form>
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <p class="hint">No live listings match “{{ q }}”.</p>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
