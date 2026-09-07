@@ -11,13 +11,36 @@
     <span class="bad">{{ last_run.universities_failed }} failed</span>
   </p>
   {% else %}
-  <p class="admin-summary">No crawl has run yet. Run <code>python -m app.ingest.runner</code>.</p>
+  <p class="admin-summary">No crawl has run yet.</p>
   {% endif %}
+
+  {% if flash == 'started' %}<p class="banner ok">Crawl started in the background — refresh this page to watch it progress.</p>{% endif %}
+  {% if flash == 'already-running' %}<p class="banner">A crawl is already running.</p>{% endif %}
+  {% if flash == 'bad-token' %}<p class="banner bad">Wrong admin token.</p>{% endif %}
+  {% if flash == 'trigger-disabled' %}<p class="banner bad">The trigger is disabled — set <code>ADMIN_TOKEN</code> in the service environment.</p>{% endif %}
+
+  <div class="trigger-box">
+    {% if trigger.running %}
+      <p class="banner ok"><strong>Crawl in progress…</strong> started {{ trigger.started_at|ago }}. Refresh to watch the table update.</p>
+    {% elif trigger_enabled %}
+      <form method="post" action="/admin/refresh" class="trigger-form">
+        <label>Run crawl now
+          <input type="password" name="token" placeholder="admin token" required autocomplete="off">
+        </label>
+        <input type="text" name="only" placeholder="optional: slugs e.g. rmit uwa" class="only">
+        <button type="submit" class="btn-primary">Crawl</button>
+      </form>
+      <p class="hint">Auto-discovers each ATS from its careers page, then crawls. Full run takes a while (polite rate limits).</p>
+    {% else %}
+      <p class="hint">Set <code>ADMIN_TOKEN</code> in the service environment to enable the "Run crawl now" button. The scheduler also crawls automatically on startup and every few hours.</p>
+    {% endif %}
+    {% if trigger.last_error %}<p class="banner bad">Last crawl error: {{ trigger.last_error }}</p>{% endif %}
+  </div>
 
   <table class="health">
     <thead>
       <tr>
-        <th>University</th><th>Adapter</th><th>Confidence</th>
+        <th>University</th><th>Adapter</th><th>Detected (auto)</th><th>Confidence</th>
         <th>Status</th><th class="num">Records</th><th>Last run</th><th class="num">ms</th><th>Note</th>
       </tr>
     </thead>
@@ -26,6 +49,12 @@
       <tr class="{{ 'row-stale' if r.stale else '' }}">
         <td>{{ r.uni.name }} <span class="state-badge sm">{{ r.uni.state }}</span></td>
         <td><code>{{ r.uni.adapter }}</code></td>
+        <td>
+          {% if r.resolved %}
+            <code>{{ r.resolved.adapter }}</code>
+            {% if r.resolved.adapter != r.uni.adapter %}<span class="conf conf-medium">override</span>{% endif %}
+          {% else %}<span class="muted">—</span>{% endif %}
+        </td>
         <td><span class="conf conf-{{ r.confidence }}">{{ r.confidence }}</span></td>
         {% if r.run %}
           <td><span class="status status-{{ r.run.status }}">{{ r.run.status|replace('_',' ') }}</span></td>

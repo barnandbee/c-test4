@@ -38,3 +38,7 @@ services:
         value: "3"
       - key: RESPECT_ROBOTS
         value: "true"
+      # Gates the "Run crawl now" button on /admin. Render generates a value;
+      # read it from the service's Environment tab to use the button.
+      - key: ADMIN_TOKEN
+        generateValue: true
