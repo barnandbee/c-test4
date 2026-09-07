@@ -43,8 +43,10 @@ class Settings(BaseSettings):
     # Scheduling: how many times/day the full refresh runs (kept low on purpose)
     refresh_times_per_day: int = 3
 
-    # Token gating the /admin "Run crawl now" trigger. Empty = trigger disabled.
+    # Admin login password (also used to sign the admin session cookie and gate
+    # the crawl trigger). Empty = admin area cannot be logged into.
     admin_token: str = ""
+    session_ttl_hours: int = 12
 
     # Run the ingestion scheduler inside the web process (for hosts with no
     # separate worker, e.g. Render's free tier). Off by default: docker-compose

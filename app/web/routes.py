@@ -8,6 +8,7 @@ from pathlib import Path
 from xml.sax.saxutils import escape
 
 from fastapi import APIRouter, Depends, Form, Request
+from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import desc, func, select
@@ -15,6 +16,7 @@ from sqlalchemy.orm import Session
 
 from app.config import UNIVERSITY_GROUPS, STATES, get_settings, load_universities
 from app.db import get_session
+from app.web.auth import COOKIE_NAME, is_admin, make_cookie, require_admin
 from app.models import AdapterRun, CrawlRun, Listing, SavedSearch, utcnow
 from app.queries import (
     Filters,
@@ -110,6 +112,7 @@ def filters_from_request(request: Request) -> Filters:
         cities=many("city"),
         role_families=many("role_family"),
         level_bands=many("level_band"),
+        pay_grades=many("pay_grade"),
         classification=qp.get("classification") or None,
         work_types=many("work_type"),
         time_fractions=many("time_fraction"),
@@ -130,6 +133,7 @@ def _template_context(request: Request, session: Session) -> dict:
     universities = load_universities()
     return {
         "request": request,
+        "is_admin": is_admin(request),
         "universities": sorted(universities, key=lambda u: u["name"]),
         "groups": UNIVERSITY_GROUPS,
         "states": STATES,
@@ -169,7 +173,7 @@ def _selected(request: Request) -> dict:
     """Map of currently-selected multi-values for checkbox state in the template."""
     qp = request.query_params
     keys = ["university", "group", "state", "city", "role_family", "level_band",
-            "work_type", "time_fraction", "discipline"]
+            "pay_grade", "work_type", "time_fraction", "discipline"]
     sel = {k: set(qp.getlist(k)) for k in keys}
     sel["scalar"] = {
         "posted_within": qp.get("posted_within", ""),
@@ -185,8 +189,8 @@ def _selected(request: Request) -> dict:
     return sel
 
 
-# --- JSON API ----------------------------------------------------------------
-@router.get("/api/listings")
+# --- JSON API (admin only) ---------------------------------------------------
+@router.get("/api/listings", dependencies=[Depends(require_admin)])
 def api_listings(request: Request, session: Session = Depends(get_session)):
     f = filters_from_request(request)
     result = search(session, f)
@@ -261,8 +265,46 @@ def _rss_item(l: Listing) -> str:
             f"<description>{escape(meta + ' — ' + desc)}</description></item>")
 
 
+# --- admin login -------------------------------------------------------------
+@router.get("/admin/login", response_class=HTMLResponse)
+def admin_login_form(request: Request):
+    ctx = {"request": request, "is_admin": is_admin(request),
+           "enabled": bool(get_settings().admin_token),
+           "flash": request.query_params.get("flash")}
+    return _TEMPLATES.TemplateResponse(request, "login.html", ctx)
+
+
+@router.post("/admin/login")
+def admin_login(request: Request, token: str = Form(...)):
+    if get_settings().admin_token and token == get_settings().admin_token:
+        resp = RedirectResponse("/admin", status_code=303)
+        resp.set_cookie(COOKIE_NAME, make_cookie(), httponly=True, samesite="lax",
+                        max_age=get_settings().session_ttl_hours * 3600,
+                        secure=request.url.scheme == "https")
+        return resp
+    return RedirectResponse("/admin/login?flash=bad", status_code=303)
+
+
+@router.get("/admin/logout")
+def admin_logout():
+    resp = RedirectResponse("/", status_code=303)
+    resp.delete_cookie(COOKIE_NAME)
+    return resp
+
+
+# --- protected API docs ------------------------------------------------------
+@router.get("/admin/openapi.json", dependencies=[Depends(require_admin)])
+def admin_openapi(request: Request):
+    return JSONResponse(request.app.openapi())
+
+
+@router.get("/admin/api-docs", dependencies=[Depends(require_admin)], response_class=HTMLResponse)
+def admin_api_docs():
+    return get_swagger_ui_html(openapi_url="/admin/openapi.json", title="AU Uni Jobs API")
+
+
 # --- admin / health ----------------------------------------------------------
-@router.get("/admin", response_class=HTMLResponse)
+@router.get("/admin", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
 def admin(request: Request, session: Session = Depends(get_session)):
     from app.ingest import trigger
     from app.models import SourceResolution
@@ -292,29 +334,19 @@ def admin(request: Request, session: Session = Depends(get_session)):
         })
     last_run = session.scalar(select(CrawlRun).order_by(desc(CrawlRun.started_at)))
     ctx = {
-        "request": request, "rows": rows, "last_run": last_run, "now": now,
-        "trigger_enabled": bool(get_settings().admin_token),
+        "request": request, "is_admin": True, "rows": rows, "last_run": last_run, "now": now,
         "trigger": trigger.status(),
         "flash": request.query_params.get("flash"),
     }
     return _TEMPLATES.TemplateResponse(request, "admin.html", ctx)
 
 
-@router.post("/admin/refresh")
-def admin_refresh(request: Request, token: str = Form(""),
-                  only: str = Form("")):
+@router.post("/admin/refresh", dependencies=[Depends(require_admin)])
+def admin_refresh(only: str = Form("")):
     """Kick off a full crawl (auto-discovering endpoints) in the background.
-
-    Token-gated so nobody but the operator can make the server crawl. Works without
-    shell access — the button on /admin posts here.
-    """
+    Admin-only (session); the button on /admin posts here."""
     from app.ingest import trigger
 
-    expected = get_settings().admin_token
-    if not expected:
-        return RedirectResponse("/admin?flash=trigger-disabled", status_code=303)
-    if token != expected:
-        return RedirectResponse("/admin?flash=bad-token", status_code=303)
     only_list = [s for s in only.replace(",", " ").split() if s] or None
     started = trigger.start(only=only_list)
     return RedirectResponse(
@@ -322,16 +354,14 @@ def admin_refresh(request: Request, token: str = Form(""),
     )
 
 
-@router.get("/admin/probe", response_class=Response)
-def admin_probe(request: Request, token: str = "", url: str = "", xhr: str = "0"):
+@router.get("/admin/probe", response_class=Response, dependencies=[Depends(require_admin)])
+def admin_probe(request: Request, url: str = "", xhr: str = "0"):
     """Fetch a URL from the server and return the raw response head — a ground-truth
     tool for diagnosing adapters from the browser (the host has egress; the build
-    sandbox doesn't). Token-gated. e.g. /admin/probe?token=...&url=<listing>&xhr=1
+    sandbox doesn't). Admin-only. e.g. /admin/probe?url=<listing>&xhr=1
     """
     from app.ingest.base import PoliteClient
 
-    if not get_settings().admin_token or token != get_settings().admin_token:
-        return Response("forbidden", status_code=403, media_type="text/plain")
     if not url:
         return Response("pass ?url=<absolute url>&xhr=0|1", media_type="text/plain")
     headers = ({"X-Requested-With": "XMLHttpRequest",
@@ -346,12 +376,12 @@ def admin_probe(request: Request, token: str = "", url: str = "", xhr: str = "0"
     return Response(report, media_type="text/plain")
 
 
-@router.get("/admin/analytics", response_class=HTMLResponse)
+@router.get("/admin/analytics", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
 def admin_analytics(request: Request, session: Session = Depends(get_session)):
     f = filters_from_request(request)
     data = analytics(session, f)
     ctx = {
-        "request": request, "data": data, "f": f,
+        "request": request, "is_admin": True, "data": data, "f": f,
         "selected": _selected(request),
         "states": STATES, "role_families": ROLE_FAMILIES, "level_bands": LEVEL_BANDS,
         "posted_windows": POSTED_WINDOWS, "groups": UNIVERSITY_GROUPS,
@@ -360,13 +390,8 @@ def admin_analytics(request: Request, session: Session = Depends(get_session)):
     return _TEMPLATES.TemplateResponse(request, "analytics.html", ctx)
 
 
-# --- featured jobs manager ---------------------------------------------------
-def _admin_ok(token: str) -> bool:
-    expected = get_settings().admin_token
-    return bool(expected) and token == expected
-
-
-@router.get("/admin/featured", response_class=HTMLResponse)
+# --- featured jobs manager (admin only) --------------------------------------
+@router.get("/admin/featured", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
 def admin_featured(request: Request, q: str = "", session: Session = Depends(get_session)):
     featured = load_featured_admin(session)
     matches = []
@@ -374,19 +399,15 @@ def admin_featured(request: Request, q: str = "", session: Session = Depends(get
         res = search(session, Filters(q=q, per_page=15))
         matches = res.listings
     ctx = {
-        "request": request, "featured": featured, "matches": matches, "q": q,
-        "trigger_enabled": bool(get_settings().admin_token),
+        "request": request, "is_admin": True, "featured": featured, "matches": matches, "q": q,
         "flash": request.query_params.get("flash"),
     }
     return _TEMPLATES.TemplateResponse(request, "featured.html", ctx)
 
 
-@router.post("/admin/featured/add")
-def admin_featured_add(token: str = Form(""), listing_id: str = Form(...),
-                       session: Session = Depends(get_session)):
+@router.post("/admin/featured/add", dependencies=[Depends(require_admin)])
+def admin_featured_add(listing_id: str = Form(...), session: Session = Depends(get_session)):
     from app.models import FeaturedJob
-    if not _admin_ok(token):
-        return RedirectResponse("/admin/featured?flash=bad-token", status_code=303)
     exists = session.scalar(select(FeaturedJob).where(FeaturedJob.listing_id == listing_id))
     if not exists:
         n = session.scalar(select(func.count()).select_from(FeaturedJob)) or 0
@@ -395,13 +416,11 @@ def admin_featured_add(token: str = Form(""), listing_id: str = Form(...),
     return RedirectResponse("/admin/featured?flash=added", status_code=303)
 
 
-@router.post("/admin/featured/update")
-def admin_featured_update(token: str = Form(""), fid: int = Form(...),
-                          video_url: str = Form(""), headline: str = Form(""),
-                          position: int = Form(1), session: Session = Depends(get_session)):
+@router.post("/admin/featured/update", dependencies=[Depends(require_admin)])
+def admin_featured_update(fid: int = Form(...), video_url: str = Form(""),
+                          headline: str = Form(""), position: int = Form(1),
+                          session: Session = Depends(get_session)):
     from app.models import FeaturedJob
-    if not _admin_ok(token):
-        return RedirectResponse("/admin/featured?flash=bad-token", status_code=303)
     fj = session.get(FeaturedJob, fid)
     if fj:
         fj.video_url = video_url.strip() or None
@@ -411,12 +430,9 @@ def admin_featured_update(token: str = Form(""), fid: int = Form(...),
     return RedirectResponse("/admin/featured?flash=saved", status_code=303)
 
 
-@router.post("/admin/featured/remove")
-def admin_featured_remove(token: str = Form(""), fid: int = Form(...),
-                          session: Session = Depends(get_session)):
+@router.post("/admin/featured/remove", dependencies=[Depends(require_admin)])
+def admin_featured_remove(fid: int = Form(...), session: Session = Depends(get_session)):
     from app.models import FeaturedJob
-    if not _admin_ok(token):
-        return RedirectResponse("/admin/featured?flash=bad-token", status_code=303)
     fj = session.get(FeaturedJob, fid)
     if fj:
         session.delete(fj)

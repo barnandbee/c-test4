@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}Admin login{% endblock %}
+{% block content %}
+<div class="login-wrap">
+  <h1>Admin login</h1>
+  {% if not enabled %}
+    <p class="banner bad">Admin is not configured — set <code>ADMIN_TOKEN</code> in the service environment.</p>
+  {% else %}
+    {% if flash == 'bad' %}<p class="banner bad">Incorrect token.</p>{% endif %}
+    <form method="post" action="/admin/login" class="login-form">
+      <label for="token">Admin token</label>
+      <input type="password" id="token" name="token" required autocomplete="current-password" autofocus>
+      <button type="submit" class="btn-primary">Sign in</button>
+    </form>
+    <p class="hint">This unlocks source health, analytics, featured-role management and the API.</p>
+  {% endif %}
+</div>
+{% endblock %}

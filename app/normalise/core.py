@@ -87,6 +87,9 @@ def normalise_record(raw: RawJob, university: dict[str, Any]) -> dict[str, Any]:
         "classification_raw": raw.classification_raw,
         "level_band": level["level_band"],
         "level_scale": level["level_scale"],
+        # Canonical pay grade (HEW n / Academic Level X). Often the only salary
+        # signal a listing gives, so surface it as its own category.
+        "pay_grade": level["level_label"] or "Not specified",
         "salary_min": salary["salary_min"],
         "salary_max": salary["salary_max"],
         "salary_raw": salary["salary_raw"],

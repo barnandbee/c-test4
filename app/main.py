@@ -41,7 +41,9 @@ async def lifespan(app: FastAPI):
             scheduler.shutdown(wait=False)
 
 
-app = FastAPI(title="Australian University Jobs Board", docs_url="/api/docs", lifespan=lifespan)
+# Public docs disabled; Swagger is served behind the admin login (see routes).
+app = FastAPI(title="Australian University Jobs Board",
+              docs_url=None, redoc_url=None, openapi_url=None, lifespan=lifespan)
 
 _STATIC = Path(__file__).resolve().parent / "web" / "static"
 app.mount("/static", StaticFiles(directory=_STATIC), name="static")
