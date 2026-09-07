@@ -15,9 +15,13 @@
   <a class="skip-link" href="#results">Skip to results</a>
   <header class="site-header">
     <div class="wrap">
-      <a class="brand" href="/">
-        <span class="brand-mark" aria-hidden="true">◍</span>
-        <span class="brand-name">AU<span class="brand-sep">/</span>UNI JOBS</span>
+      <a class="brand" href="/" aria-label="AU Uni Jobs — home">
+        <img class="brand-logo" src="/static/logo.png" alt="AU Uni Jobs" width="150"
+             onerror="this.remove();var f=document.getElementById('brand-fallback');if(f)f.hidden=false;">
+        <span class="brand-text" id="brand-fallback" hidden>
+          <span class="brand-mark" aria-hidden="true">◍</span>
+          <span class="brand-name">AU<span class="brand-sep">/</span>UNI JOBS</span>
+        </span>
       </a>
       <p class="brand-tag">Open vacancies across all 42 Australian universities</p>
       <nav class="site-nav">
