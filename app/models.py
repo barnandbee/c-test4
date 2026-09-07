@@ -176,6 +176,25 @@ class SavedSearch(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class SourceResolution(Base):
+    """Cached result of auto-discovering a university's real ATS endpoint.
+
+    Lets the deployed crawler self-heal: it resolves each careers page to the
+    correct adapter + params once, caches it, and reuses it until it goes stale or
+    starts failing — so wrong config guesses stop mattering.
+    """
+
+    __tablename__ = "source_resolutions"
+
+    university_slug: Mapped[str] = mapped_column(String(64), primary_key=True)
+    adapter: Mapped[str] = mapped_column(String(32))
+    params_json: Mapped[str] = mapped_column(Text)          # JSON-encoded params dict
+    matched_url: Mapped[str | None] = mapped_column(Text)
+    source: Mapped[str] = mapped_column(String(16), default="discovered")  # discovered/config
+    ok: Mapped[bool] = mapped_column(Boolean, default=True)
+    resolved_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class HttpCache(Base):
     """Conditional-request cache: ETag / Last-Modified per URL (see CRAWLING.md)."""
 

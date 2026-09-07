@@ -176,10 +176,10 @@ universities:
     careers_url: https://www.sydney.edu.au/about-us/careers-at-sydney.html
     params:
       tenant: usyd
-      dc: wd3
+      dc: wd105
       site: USYD_EXTERNAL_CAREER_SITE
     confidence: high
-    notes: Confirmed Workday. Endpoint POST /wday/cxs/usyd/USYD_EXTERNAL_CAREER_SITE/jobs
+    notes: Confirmed Workday (usyd.wd105). Auto-discovery re-confirms dc from the careers page.
 
   - slug: uts
     name: University of Technology Sydney
@@ -198,24 +198,27 @@ universities:
     name: University of Wollongong
     state: NSW
     groups: []
-    adapter: pageup
-    careers_url: https://www.uow.edu.au/about/jobs/
+    adapter: oracle
+    careers_url: https://www.uow.edu.au/about/jobs/jobs-available/
     params:
-      listing_url: https://jobs.uow.edu.au/cw/en/listing/
-    confidence: medium
+      host: uow.hcm.ap1.oraclecloud.com   # verify via --discover; host/site auto-resolved from careers page
+      site: CX_1
+    confidence: low
+    notes: >
+      UOW uses Oracle Recruiting Cloud (careers page is Oracle-powered). Exact host
+      and siteNumber must be confirmed by auto-discovery on a host with egress —
+      the values here are placeholders the discovery step overrides.
 
   - slug: wsu
     name: Western Sydney University
     state: NSW
     groups: [iru]
-    adapter: pageup
+    adapter: nganet
     careers_url: https://www.westernsydney.edu.au/careers
     params:
-      listing_url: https://uws.nga.net.au/cp/  # NGA candidate; see notes
+      listing_url: https://uws.nga.net.au/cp/
     confidence: low
-    notes: >
-      WSU has historically used NGA.NET (uws.nga.net.au). Marked pageup->recheck:
-      switch adapter to `nganet` with board_id if confirmed. Left as low pending verify.
+    notes: WSU uses NGA.NET (uws.nga.net.au). Auto-discovery confirms the host from the careers page.
 
   # ------------------------------- NT --------------------------------
   - slug: cdu
@@ -255,11 +258,12 @@ universities:
     name: Griffith University
     state: QLD
     groups: [iru]
-    adapter: pageup
+    adapter: smartrecruiters
     careers_url: https://www.griffith.edu.au/careers
     params:
-      listing_url: https://jobs.griffith.edu.au/cw/en/listing/
-    confidence: medium
+      company_id: GriffithUniversity
+    confidence: high
+    notes: Confirmed SmartRecruiters (careers.smartrecruiters.com/GriffithUniversity).
 
   - slug: jcu
     name: James Cook University
@@ -276,14 +280,12 @@ universities:
     name: Queensland University of Technology
     state: QLD
     groups: []
-    adapter: pageup
+    adapter: nganet
     careers_url: https://www.qut.edu.au/about/working-at-qut
     params:
-      listing_url: https://qut.nga.net.au/cp/  # NGA candidate; see notes
-    confidence: low
-    notes: >
-      QUT has used NGA.NET (qut.nga.net.au). If confirmed, switch adapter to
-      `nganet`. Left low pending verify.
+      listing_url: https://qut.nga.net.au/cp/
+    confidence: medium
+    notes: QUT uses NGA.NET (qut.nga.net.au). Auto-discovery confirms the host from the careers page.
 
   - slug: uq
     name: University of Queensland
@@ -379,9 +381,9 @@ universities:
     adapter: pageup
     careers_url: https://www.deakin.edu.au/about-deakin/careers-at-deakin
     params:
-      listing_url: https://careers.deakin.edu.au/cw/en/listing/
-    confidence: medium
-    notes: careers.deakin.edu.au confirmed as the careers host; PageUp assumed.
+      listing_url: https://careers.deakin.edu.au/en/listing/
+    confidence: high
+    notes: Confirmed PageUp vanity (careers.deakin.edu.au/en/listing/ — no /cw/ segment).
 
   - slug: federation
     name: Federation University Australia
@@ -400,8 +402,9 @@ universities:
     adapter: pageup
     careers_url: https://www.latrobe.edu.au/jobs
     params:
-      listing_url: https://careers.latrobe.edu.au/cw/en/listing/
-    confidence: medium
+      listing_url: https://careers.pageuppeople.com/533/caw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp client 533 (careers.pageuppeople.com/533/caw/ — note /caw/ path).
 
   - slug: monash
     name: Monash University
@@ -420,11 +423,14 @@ universities:
     name: RMIT University
     state: VIC
     groups: [atn]
-    adapter: pageup
+    adapter: workday
     careers_url: https://www.rmit.edu.au/careers
     params:
-      listing_url: https://careers.rmit.edu.au/cw/en/listing/
-    confidence: medium
+      tenant: rmit
+      dc: wd3
+      site: RMIT_Up_Careers
+    confidence: high
+    notes: Confirmed Workday (rmit.wd3.myworkdayjobs.com/RMIT_Up_Careers).
 
   - slug: swinburne
     name: Swinburne University of Technology

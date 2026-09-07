@@ -14,12 +14,14 @@ import re
 import urllib.parse
 import xml.etree.ElementTree as ET
 
+import httpx
 from selectolax.parser import HTMLParser
 
-from app.ingest.base import Adapter, parse_date
+from app.ingest.base import Adapter, NotModified, PoliteClient, parse_date
 from app.normalise.core import RawJob
 
 _JOB_URL_RE = re.compile(r"/job/(\d+)")
+_MAX_PAGES = 40   # generous cap; no AU uni lists this many pages
 
 
 class PageUpAdapter(Adapter):
@@ -34,6 +36,57 @@ class PageUpAdapter(Adapter):
         if params.get("listing_url"):
             specs.append({"url": params["listing_url"]})
         return specs
+
+    def fetch(self, client: PoliteClient, university: dict) -> list[RawJob]:
+        """Fetch the full listing.
+
+        The HTML listing is paginated (``?page=N``); we walk every page and dedupe
+        by job id so the board reflects *all* live vacancies, not just page one.
+        A feed (if configured) is tried first as it's the cheapest complete source.
+        """
+        params = university["params"]
+
+        if params.get("feed_url"):
+            result = client.fetch(params["feed_url"])
+            if result.not_modified:
+                raise NotModified(params["feed_url"])
+            jobs = self.parse(result.content, university, params["feed_url"])
+            if jobs:
+                return jobs  # feeds carry the recent set; good enough when present
+
+        listing_url = params.get("listing_url")
+        if not listing_url:
+            return []
+        # Tolerate the /cw/ vs /caw/ path variant when discovery didn't fix it.
+        for candidate in _path_variants(listing_url):
+            try:
+                jobs = self._paginate(client, university, candidate)
+            except httpx.HTTPStatusError:
+                continue
+            if jobs:
+                return jobs
+        return []
+
+    def _paginate(self, client: PoliteClient, university: dict, listing_url: str) -> list[RawJob]:
+        seen: set[str] = set()
+        jobs: list[RawJob] = []
+        first_not_modified = False
+        for page in range(1, _MAX_PAGES + 1):
+            url = _with_page(listing_url, page)
+            result = client.fetch(url)
+            if result.not_modified:
+                if page == 1:
+                    first_not_modified = True
+                break
+            page_jobs = self.parse(result.content, university, url)
+            new = [j for j in page_jobs if j.source_job_id not in seen]
+            if not new:
+                break  # no new ids -> past the last page
+            seen.update(j.source_job_id for j in new)
+            jobs.extend(new)
+        if first_not_modified:
+            raise NotModified(listing_url)
+        return jobs
 
     def parse(self, content: bytes, university: dict, source_url: str) -> list[RawJob]:
         text = content.decode("utf-8", errors="replace").lstrip()
@@ -110,6 +163,27 @@ class PageUpAdapter(Adapter):
                 )
             )
         return jobs
+
+
+# --- pagination helpers ------------------------------------------------------
+def _with_page(url: str, page: int) -> str:
+    """Add/replace a ?page=N query param on a PageUp listing URL."""
+    parts = urllib.parse.urlsplit(url)
+    query = dict(urllib.parse.parse_qsl(parts.query))
+    query["page"] = str(page)
+    return urllib.parse.urlunsplit(
+        (parts.scheme, parts.netloc, parts.path, urllib.parse.urlencode(query), parts.fragment)
+    )
+
+
+def _path_variants(url: str) -> list[str]:
+    """PageUp listing paths appear as both /cw/ and /caw/; try the given one first."""
+    variants = [url]
+    if "/caw/" in url:
+        variants.append(url.replace("/caw/", "/cw/"))
+    elif "/cw/" in url:
+        variants.append(url.replace("/cw/", "/caw/"))
+    return variants
 
 
 # --- small DOM helpers -------------------------------------------------------

@@ -3,6 +3,16 @@
 **Compiled:** 2026-07 · **Method:** public web search + known Australian HE ATS URL
 patterns · **Live-verified:** ❌ no (see caveat)
 
+> **Update:** the runner now **auto-discovers** each ATS endpoint from the
+> university's careers page at crawl time (`app/ingest/discover.py`,
+> `python -m app.ingest.runner --discover`), so the manually-researched endpoints
+> below are a *fallback*, not the source of truth. Confirmed corrections since this
+> table was written: **RMIT → Workday**, **Griffith → SmartRecruiters**,
+> **QUT & Western Sydney → NGA.NET**, **Wollongong → Oracle Recruiting Cloud**,
+> **La Trobe** PageUp path is `/533/caw/…`, **Deakin** is `/en/listing/` (no `/cw/`),
+> **Sydney** data-centre is `wd105`. These are fixed in `config/universities.yaml`;
+> auto-discovery re-confirms them and resolves the rest on a host with open egress.
+
 ## ⚠️ Read this first
 
 The build environment has **no outbound network access** to university / ATS

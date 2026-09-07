@@ -2,12 +2,29 @@
 re-running a live crawl (brief reliability requirement)."""
 from conftest import load_fixture
 
+from app.ingest.base import FetchResult
 from app.ingest.html_generic import HtmlGenericAdapter
 from app.ingest.nganet import NgaNetAdapter
+from app.ingest.oracle import OracleAdapter
 from app.ingest.pageup import PageUpAdapter
 from app.ingest.smartrecruiters import SmartRecruitersAdapter
 from app.ingest.workday import WorkdayAdapter
 from app.normalise.core import normalise_record
+
+
+class FakeClient:
+    """Minimal PoliteClient stand-in: serves canned bytes per URL."""
+
+    def __init__(self, pages: dict[str, bytes]):
+        self.pages = pages
+        self.requested: list[str] = []
+
+    def fetch(self, url, method="GET", **kwargs):
+        self.requested.append(url)
+        if url not in self.pages:
+            import httpx
+            raise httpx.HTTPStatusError("404", request=None, response=None)
+        return FetchResult(url, 200, self.pages[url], final_url=url)
 
 UWA = {"slug": "uwa", "name": "University of Western Australia", "state": "WA",
        "params": {"listing_url": "https://jobs.uwa.edu.au/cw/en/listing/",
@@ -121,3 +138,51 @@ class TestHtmlGeneric:
         assert jobs[0].url == "https://vox.divinity.edu.au/vacancies/lecturer-in-biblical-studies/"
         assert "Parkville" in jobs[0].location
         assert jobs[0].posted_at is not None
+
+
+class TestOracle:
+    UOW = {"slug": "uow", "name": "University of Wollongong", "state": "NSW",
+           "params": {"host": "uow.hcm.ap1.oraclecloud.com", "site": "UOW"}}
+
+    def test_parse(self):
+        jobs = OracleAdapter().parse(load_fixture("oracle_requisitions.json"), self.UOW, "x")
+        assert len(jobs) == 2
+        assert jobs[0].source_job_id == "497123"
+        assert jobs[0].url == (
+            "https://uow.hcm.ap1.oraclecloud.com/hcmUI/CandidateExperience/en/sites/UOW/job/497123"
+        )
+        assert "Wollongong" in jobs[0].location
+        assert jobs[0].posted_at is not None
+
+
+class TestPageUpPagination:
+    """PageUp HTML listings paginate; the adapter must walk every page and dedupe."""
+
+    def _page(self, ids):
+        rows = "".join(
+            f'<li><article><h3><a href="/cw/en/job/{i}/role-{i}">Role {i}</a></h3>'
+            f'<span class="location">Perth</span></article></li>' for i in ids
+        )
+        return f"<html><body><ul>{rows}</ul></body></html>".encode()
+
+    def test_walks_all_pages_until_empty(self):
+        base = "https://jobs.uwa.edu.au/cw/en/listing/"
+        pages = {
+            base + "?page=1": self._page([1, 2, 3]),
+            base + "?page=2": self._page([4, 5]),
+            base + "?page=3": self._page([]),          # empty -> stop
+        }
+        client = FakeClient(pages)
+        uni = {"slug": "uwa", "name": "UWA", "state": "WA", "params": {"listing_url": base}}
+        jobs = PageUpAdapter().fetch(client, uni)
+        assert sorted(j.source_job_id for j in jobs) == ["1", "2", "3", "4", "5"]
+
+    def test_stops_when_page_repeats(self):
+        # A site that ignores ?page= and always returns page 1 must not loop forever.
+        base = "https://jobs.uwa.edu.au/cw/en/listing/"
+        same = self._page([1, 2])
+        client = FakeClient({base + f"?page={n}": same for n in range(1, 42)})
+        uni = {"slug": "uwa", "name": "UWA", "state": "WA", "params": {"listing_url": base}}
+        jobs = PageUpAdapter().fetch(client, uni)
+        assert sorted(j.source_job_id for j in jobs) == ["1", "2"]
+        assert len(client.requested) == 2  # page 1 (new), page 2 (no new ids) -> stop

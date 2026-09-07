@@ -4,6 +4,7 @@ from __future__ import annotations
 from app.ingest.base import Adapter
 from app.ingest.html_generic import HtmlGenericAdapter
 from app.ingest.nganet import NgaNetAdapter
+from app.ingest.oracle import OracleAdapter
 from app.ingest.pageup import PageUpAdapter
 from app.ingest.smartrecruiters import SmartRecruitersAdapter
 from app.ingest.workday import WorkdayAdapter
@@ -15,6 +16,7 @@ _REGISTRY: dict[str, Adapter] = {
         WorkdayAdapter(),
         NgaNetAdapter(),
         SmartRecruitersAdapter(),
+        OracleAdapter(),
         HtmlGenericAdapter(),
     )
 }

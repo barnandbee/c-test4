@@ -1,0 +1,22 @@
+{
+  "items": [
+    {
+      "requisitionList": [
+        {
+          "Id": "497123",
+          "Title": "Lecturer in Computing and Information Technology",
+          "PrimaryLocation": "Wollongong, NSW",
+          "PostedDate": "2026-08-30",
+          "JobFunction": "Academic"
+        },
+        {
+          "Id": "497124",
+          "Title": "Research Fellow, Materials Science",
+          "PrimaryLocation": "Wollongong, NSW",
+          "ExternalPostedStartDate": "2026-09-01",
+          "WorkplaceTypeCode": "Fixed term"
+        }
+      ]
+    }
+  ]
+}
