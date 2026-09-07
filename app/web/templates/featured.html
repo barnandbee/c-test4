@@ -9,13 +9,9 @@
     <a href="/admin">← Source health</a> · <a href="/admin/analytics">Analytics →</a>
   </p>
 
-  {% if not trigger_enabled %}
-    <p class="banner bad">Set <code>ADMIN_TOKEN</code> in the service environment to manage featured roles.</p>
-  {% endif %}
   {% if flash == 'added' %}<p class="banner ok">Added to featured.</p>{% endif %}
   {% if flash == 'saved' %}<p class="banner ok">Saved.</p>{% endif %}
   {% if flash == 'removed' %}<p class="banner">Removed from featured.</p>{% endif %}
-  {% if flash == 'bad-token' %}<p class="banner bad">Wrong admin token.</p>{% endif %}
 
   <h2 class="sec">Current featured <span class="muted">({{ featured|length }})</span></h2>
   {% if featured %}
@@ -39,13 +35,10 @@
         <label>Position <input type="number" name="position" min="1" max="9" value="{{ fj.position }}" style="width:56px"></label>
         <label>Video URL (mp4) <input type="url" name="video_url" value="{{ fj.video_url or '' }}" placeholder="https://…/interview.mp4"></label>
         <label>Blurb <input type="text" name="headline" value="{{ fj.headline or '' }}" placeholder="Why this role is worth a look"></label>
-        <input type="password" name="token" placeholder="admin token" required autocomplete="off">
         <button type="submit" class="btn-primary">Save</button>
       </form>
-      <form method="post" action="/admin/featured/remove" class="feat-admin-remove"
-            onsubmit="this.token.value=this.token.value">
+      <form method="post" action="/admin/featured/remove" class="feat-admin-remove">
         <input type="hidden" name="fid" value="{{ fj.id }}">
-        <input type="password" name="token" placeholder="token" required autocomplete="off" style="width:110px">
         <button type="submit" class="btn-ghost">Remove</button>
       </form>
     </div>
@@ -73,7 +66,6 @@
           <td>
             <form method="post" action="/admin/featured/add" class="feat-add-inline">
               <input type="hidden" name="listing_id" value="{{ l.id }}">
-              <input type="password" name="token" placeholder="token" required autocomplete="off" style="width:110px">
               <button type="submit" class="btn-primary">Feature</button>
             </form>
           </td>

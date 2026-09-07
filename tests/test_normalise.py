@@ -143,5 +143,11 @@ class TestMakeIdAndRecord:
         assert rec["time_fraction"] == "full-time"
         assert rec["remote_flag"] is True
         assert rec["salary_min"] == 130000
+        assert rec["pay_grade"] == "Academic Level C"
         assert len(rec["excerpt"]) <= 301  # excerpt truncated, never full description
         assert rec["university"] == "University of Sydney"
+
+    def test_pay_grade_not_specified(self):
+        uni = {"slug": "x", "name": "X Uni", "state": "VIC"}
+        raw = RawJob(source_job_id="1", title="Handyperson", url="https://x/job/1")
+        assert normalise_record(raw, uni)["pay_grade"] == "Not specified"

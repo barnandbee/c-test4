@@ -17,23 +17,17 @@
 
   {% if flash == 'started' %}<p class="banner ok">Crawl started in the background — refresh this page to watch it progress.</p>{% endif %}
   {% if flash == 'already-running' %}<p class="banner">A crawl is already running.</p>{% endif %}
-  {% if flash == 'bad-token' %}<p class="banner bad">Wrong admin token.</p>{% endif %}
-  {% if flash == 'trigger-disabled' %}<p class="banner bad">The trigger is disabled — set <code>ADMIN_TOKEN</code> in the service environment.</p>{% endif %}
 
   <div class="trigger-box">
     {% if trigger.running %}
       <p class="banner ok"><strong>Crawl in progress…</strong> started {{ trigger.started_at|ago }}. Refresh to watch the table update.</p>
-    {% elif trigger_enabled %}
+    {% else %}
       <form method="post" action="/admin/refresh" class="trigger-form">
-        <label>Run crawl now
-          <input type="password" name="token" placeholder="admin token" required autocomplete="off">
-        </label>
+        <span class="tb-label">Run crawl now</span>
         <input type="text" name="only" placeholder="optional: slugs e.g. rmit uwa" class="only">
         <button type="submit" class="btn-primary">Crawl</button>
       </form>
       <p class="hint">Auto-discovers each ATS from its careers page, then crawls. Full run takes a while (polite rate limits).</p>
-    {% else %}
-      <p class="hint">Set <code>ADMIN_TOKEN</code> in the service environment to enable the "Run crawl now" button. The scheduler also crawls automatically on startup and every few hours.</p>
     {% endif %}
     {% if trigger.last_error %}<p class="banner bad">Last crawl error: {{ trigger.last_error }}</p>{% endif %}
   </div>

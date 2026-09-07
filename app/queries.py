@@ -54,6 +54,7 @@ class Filters:
     cities: list[str] = field(default_factory=list)
     role_families: list[str] = field(default_factory=list)
     level_bands: list[str] = field(default_factory=list)
+    pay_grades: list[str] = field(default_factory=list)
     classification: str | None = None
     work_types: list[str] = field(default_factory=list)
     time_fractions: list[str] = field(default_factory=list)
@@ -91,6 +92,8 @@ def _apply(stmt: Select, f: Filters) -> Select:
         stmt = stmt.where(Listing.role_family.in_(f.role_families))
     if f.level_bands:
         stmt = stmt.where(Listing.level_band.in_(f.level_bands))
+    if f.pay_grades:
+        stmt = stmt.where(func.coalesce(Listing.pay_grade, "Not specified").in_(f.pay_grades))
     if f.classification:
         stmt = stmt.where(Listing.classification_raw.ilike(f"%{f.classification}%"))
     if f.work_types:
@@ -183,6 +186,21 @@ _BAND_ORDER = {b: i for i, b in enumerate(
     ["entry", "early-career", "mid", "senior", "leadership"])}
 
 
+def pay_grade_sort_key(label: str) -> tuple:
+    """Order pay grades sensibly: HEW 1..10, then Academic Level A..E, then other,
+    with 'Not specified' last."""
+    import re
+    if not label or label == "Not specified":
+        return (9, 99, label or "")
+    m = re.search(r"hew\D*(\d+)", label, re.I)
+    if m:
+        return (0, int(m.group(1)), label)
+    m = re.search(r"level\s*([a-e])", label, re.I)
+    if m:
+        return (1, "abcde".index(m.group(1).lower()), label)
+    return (2, 0, label)
+
+
 def analytics(session: Session, f: Filters) -> dict:
     """Aggregate the filtered listing set across every dimension, for the dashboard.
     Respects the same Filters as the board, so you can analyse any subset."""
@@ -209,6 +227,14 @@ def analytics(session: Session, f: Filters) -> dict:
     c = base.c
     n = total()
     with_salary = total(c.salary_min.is_not(None))
+
+    # Pay grade (HEW / Academic level), NULL -> "Not specified", ordered by scale.
+    pg_col = func.coalesce(c.pay_grade, "Not specified")
+    pg_rows = [(v, ct) for v, ct in
+               session.execute(select(pg_col, func.count()).select_from(base).group_by(pg_col)).all()]
+    pg_rows.sort(key=lambda r: pay_grade_sort_key(r[0]))
+    by_pay_grade = {"rows": pg_rows, "max": max((ct for _, ct in pg_rows), default=0)}
+
     return {
         "total": n,
         "summary": {
@@ -229,6 +255,7 @@ def analytics(session: Session, f: Filters) -> dict:
         "by_time_fraction": by(c.time_fraction),
         "by_university": by(c.university, limit=12),
         "by_discipline": by(c.discipline, limit=12),
+        "by_pay_grade": by_pay_grade,
     }
 
 
@@ -238,10 +265,16 @@ def facet_values(session: Session) -> dict:
         return [v for (v,) in session.execute(
             select(col).where(col.is_not(None), Listing.status == "open").distinct().order_by(col)
         )]
+    pay_grades = [v for (v,) in session.execute(
+        select(func.coalesce(Listing.pay_grade, "Not specified"))
+        .where(Listing.status == "open").distinct()
+    )]
+    pay_grades.sort(key=pay_grade_sort_key)
     return {
         "disciplines": distinct(Listing.discipline),
         "cities": distinct(Listing.campus_location),
         "role_families": distinct(Listing.role_family),
         "level_bands": distinct(Listing.level_band),
         "work_types": distinct(Listing.work_type),
+        "pay_grades": pay_grades,
     }

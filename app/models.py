@@ -67,6 +67,7 @@ class Listing(Base):
     classification_raw: Mapped[str | None] = mapped_column(String(255))
     level_band: Mapped[str | None] = mapped_column(String(16), index=True)      # entry..leadership
     level_scale: Mapped[str | None] = mapped_column(String(16))                 # academic/professional
+    pay_grade: Mapped[str | None] = mapped_column(String(32), index=True)       # "HEW 7"/"Academic Level B"/"Not specified"
 
     salary_min: Mapped[float | None] = mapped_column(Float)
     salary_max: Mapped[float | None] = mapped_column(Float)
@@ -119,6 +120,7 @@ class StagingListing(Base):
     classification_raw: Mapped[str | None] = mapped_column(String(255))
     level_band: Mapped[str | None] = mapped_column(String(16))
     level_scale: Mapped[str | None] = mapped_column(String(16))
+    pay_grade: Mapped[str | None] = mapped_column(String(32))
     salary_min: Mapped[float | None] = mapped_column(Float)
     salary_max: Mapped[float | None] = mapped_column(Float)
     salary_raw: Mapped[str | None] = mapped_column(String(255))

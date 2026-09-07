@@ -47,7 +47,7 @@ _RESOLUTION_TTL = dt.timedelta(days=7)
 _UPSERT_COLUMNS = (
     "source_job_id", "university", "university_slug", "state", "campus_location",
     "title", "url", "posted_at", "closes_at", "work_type", "time_fraction",
-    "role_family", "classification_raw", "level_band", "level_scale",
+    "role_family", "classification_raw", "level_band", "level_scale", "pay_grade",
     "salary_min", "salary_max", "salary_raw", "discipline", "remote_flag", "excerpt",
 )
 
