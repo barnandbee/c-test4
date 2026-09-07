@@ -83,6 +83,24 @@ class TestPageUp:
         specs = PageUpAdapter().endpoints(UWA)
         assert specs[0]["url"].endswith("?rss=1")
 
+    def test_xhr_json_wrapping_html_fragment(self):
+        # PageUp XHR responses wrap the listing HTML in JSON under a varying key.
+        import json
+        fragment = ('<li><article><h3><a href="/cw/en/job/700100/lecturer">'
+                    'Lecturer in Maths</a></h3><span class="location">Crawley</span>'
+                    '<span class="categories">Academic Level B</span></article></li>')
+        for key in ("results", "SearchResults", "content", "jobResultsHtml"):
+            payload = json.dumps({key: fragment, "count": 1}).encode()
+            jobs = PageUpAdapter().parse(payload, UWA, UWA["params"]["listing_url"])
+            assert len(jobs) == 1, f"failed for key {key}"
+            assert jobs[0].source_job_id == "700100"
+            assert jobs[0].title == "Lecturer in Maths"
+
+    def test_json_without_job_links_yields_nothing(self):
+        import json
+        payload = json.dumps({"count": 0, "results": "<p>No matching jobs</p>"}).encode()
+        assert PageUpAdapter().parse(payload, UWA, UWA["params"]["listing_url"]) == []
+
 
 class TestWorkday:
     def test_parse(self):
