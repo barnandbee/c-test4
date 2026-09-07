@@ -110,9 +110,9 @@ universities:
     adapter: pageup
     careers_url: https://www.csu.edu.au/jobs
     params:
-      listing_url: https://jobs.csu.edu.au/cw/en/listing/
-    confidence: medium
-    notes: PageUp vanity host likely jobs.csu.edu.au.
+      listing_url: https://careers.pageuppeople.com/924/cw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp client 924 (careers.pageuppeople.com/924/cw/).
 
   - slug: macquarie
     name: Macquarie University
@@ -272,9 +272,9 @@ universities:
     adapter: pageup
     careers_url: https://www.jcu.edu.au/careers-at-jcu
     params:
-      listing_url: https://secure.dc2.pageuppeople.com/apply/822/caw/  # placeholder
+      listing_url: https://careers.pageuppeople.com/822/cw/en/listing/
     confidence: low
-    notes: PageUp likely but cw host unconfirmed. Verify listing_url.
+    notes: PageUp apply instance 822; external listing client id may differ — verify via /admin/probe.
 
   - slug: qut
     name: Queensland University of Technology
@@ -340,12 +340,14 @@ universities:
     name: Flinders University
     state: SA
     groups: []
-    adapter: pageup
-    careers_url: https://jobs.flinders.edu.au/
+    adapter: workday
+    careers_url: https://www.flinders.edu.au/careers
     params:
-      listing_url: https://jobs.flinders.edu.au/cw/en/listing/
+      tenant: flinders
+      dc: wd3
+      site: flinders_employment
     confidence: high
-    notes: Confirmed PageUp vanity (jobs.flinders.edu.au).
+    notes: Confirmed Workday (flinders.wd3.myworkdayjobs.com/flinders_employment).
 
   - slug: torrens
     name: Torrens University Australia
@@ -497,11 +499,14 @@ universities:
     state: WA
     groups: []
     adapter: pageup
-    careers_url: https://www.ecu.edu.au/careers
+    careers_url: https://www.ecu.edu.au/employment-opportunities
     params:
-      listing_url: https://jobs.ecu.edu.au/cw/en/listing/
-    confidence: high
-    notes: Confirmed PageUp vanity (jobs.ecu.edu.au).
+      # jobs.ecu.edu.au did not resolve and the PageUp client id is unconfirmed.
+      # Pointed at the careers page so it fails safe (0 jobs) rather than risk
+      # scraping another org's PageUp. Fix the client id via /admin/probe.
+      listing_url: https://www.ecu.edu.au/employment-opportunities
+    confidence: low
+    notes: KNOWN GAP — needs real PageUp client id (careers.pageuppeople.com/<id>/cw/) confirmed via probe.
 
   - slug: murdoch
     name: Murdoch University
@@ -531,7 +536,6 @@ universities:
     adapter: pageup
     careers_url: https://www.uwa.edu.au/jobs
     params:
-      listing_url: https://jobs.uwa.edu.au/cw/en/listing/
-      feed_url: https://jobs.uwa.edu.au/cw/en/listing/?rss=1
+      listing_url: https://careers.pageuppeople.com/589/cw/en/listing/
     confidence: high
-    notes: Confirmed PageUp vanity (jobs.uwa.edu.au).
+    notes: Confirmed PageUp client 589 (careers.pageuppeople.com/589/cw/; jobs.uwa.edu.au did not resolve).

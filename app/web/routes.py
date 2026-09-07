@@ -311,5 +311,29 @@ def admin_refresh(request: Request, token: str = Form(""),
     )
 
 
+@router.get("/admin/probe", response_class=Response)
+def admin_probe(request: Request, token: str = "", url: str = "", xhr: str = "0"):
+    """Fetch a URL from the server and return the raw response head — a ground-truth
+    tool for diagnosing adapters from the browser (the host has egress; the build
+    sandbox doesn't). Token-gated. e.g. /admin/probe?token=...&url=<listing>&xhr=1
+    """
+    from app.ingest.base import PoliteClient
+
+    if not get_settings().admin_token or token != get_settings().admin_token:
+        return Response("forbidden", status_code=403, media_type="text/plain")
+    if not url:
+        return Response("pass ?url=<absolute url>&xhr=0|1", media_type="text/plain")
+    headers = ({"X-Requested-With": "XMLHttpRequest",
+                "Accept": "application/json, text/html;q=0.9, */*;q=0.8"} if xhr == "1" else {})
+    try:
+        res = PoliteClient().fetch(url, headers=headers)
+        body = res.content[:4000].decode("utf-8", errors="replace")
+        report = (f"status={res.status_code}\nfinal_url={res.final_url}\n"
+                  f"bytes={len(res.content)}\n{'-'*60}\n{body}")
+    except Exception as exc:  # noqa: BLE001
+        report = f"ERROR fetching {url}\n{type(exc).__name__}: {exc}"
+    return Response(report, media_type="text/plain")
+
+
 def _iso(value: dt.datetime | None) -> str | None:
     return value.isoformat() if value else None

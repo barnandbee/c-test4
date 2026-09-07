@@ -73,7 +73,12 @@ class PageUpAdapter(Adapter):
         first_not_modified = False
         for page in range(1, _MAX_PAGES + 1):
             url = _with_page(listing_url, page)
-            result = client.fetch(url)
+            # XHR headers make PageUp return the job data (JSON, often wrapping an
+            # HTML fragment) instead of a JavaScript shell that has no jobs in it.
+            result = client.fetch(url, headers={
+                "X-Requested-With": "XMLHttpRequest",
+                "Accept": "application/json, text/html;q=0.9, */*;q=0.8",
+            })
             if result.not_modified:
                 if page == 1:
                     first_not_modified = True
@@ -92,6 +97,13 @@ class PageUpAdapter(Adapter):
         text = content.decode("utf-8", errors="replace").lstrip()
         if text.startswith("<?xml") or "<rss" in text[:200].lower():
             return self._parse_rss(text, university, source_url)
+        if text[:1] in "{[":
+            # PageUp XHR responses are JSON, usually wrapping an HTML fragment.
+            # Extract any HTML that contains job links and parse it — schema-agnostic.
+            html = _html_from_json(text)
+            if html:
+                return self._parse_html(html, university, source_url)
+            return []
         return self._parse_html(text, university, source_url)
 
     # ---- RSS ---------------------------------------------------------------
@@ -163,6 +175,38 @@ class PageUpAdapter(Adapter):
                 )
             )
         return jobs
+
+
+# --- JSON handling -----------------------------------------------------------
+def _html_from_json(text: str) -> str:
+    """Pull the job-bearing HTML out of a PageUp XHR JSON response.
+
+    PageUp wraps the listing HTML in JSON (field names vary by tenant/version), so
+    rather than hard-code keys we recursively collect every string value that
+    looks like it contains job markup and concatenate them. Schema-agnostic: works
+    whether the fragment lives under `results`, `SearchResults`, `content`, etc.
+    """
+    import json as _json
+
+    try:
+        data = _json.loads(text)
+    except _json.JSONDecodeError:
+        return ""
+    fragments: list[str] = []
+
+    def walk(node):
+        if isinstance(node, str):
+            if "/job/" in node and "<" in node:
+                fragments.append(node)
+        elif isinstance(node, dict):
+            for v in node.values():
+                walk(v)
+        elif isinstance(node, list):
+            for v in node:
+                walk(v)
+
+    walk(data)
+    return "\n".join(fragments)
 
 
 # --- pagination helpers ------------------------------------------------------
