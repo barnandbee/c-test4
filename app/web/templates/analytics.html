@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}Analytics — admin{% endblock %}
+
+{% macro bars(title, dim, label_fmt=None) %}
+<div class="an-card">
+  <h3>{{ title }}</h3>
+  {% if dim.rows %}
+  <ul class="an-bars">
+    {% for label, count in dim.rows %}
+    <li>
+      <span class="an-label">{{ (label_fmt(label) if label_fmt else label) }}</span>
+      <span class="an-track"><span class="an-fill" style="width: {{ (100 * count / dim.max)|round(1) }}%"></span></span>
+      <span class="an-count">{{ count }}</span>
+    </li>
+    {% endfor %}
+  </ul>
+  {% else %}<p class="hint">No data.</p>{% endif %}
+</div>
+{% endmacro %}
+
+{% block content %}
+<div class="admin">
+  <h1>Analytics</h1>
+  <p class="admin-summary">
+    Breakdown of the {{ "{:,}".format(data.total) }} listings matching the current filters.
+    <a href="/admin">← Source health</a> · <a href="/admin/featured">Featured →</a>
+  </p>
+
+  <form method="get" action="/admin/analytics" class="an-filter">
+    <fieldset>
+      <legend>State</legend>
+      {% for st in states %}
+      <label class="check"><input type="checkbox" name="state" value="{{ st }}"
+        {% if st in selected.state %}checked{% endif %}> {{ st }}</label>
+      {% endfor %}
+    </fieldset>
+    <fieldset>
+      <legend>Role family</legend>
+      {% for rf in role_families %}
+      <label class="check"><input type="checkbox" name="role_family" value="{{ rf }}"
+        {% if rf in selected.role_family %}checked{% endif %}> {{ rf|replace('-',' ') }}</label>
+      {% endfor %}
+    </fieldset>
+    <fieldset>
+      <legend>Posted</legend>
+      <select name="posted_within">
+        <option value="">Any time</option>
+        {% for val, lbl in posted_windows %}
+        <option value="{{ val }}" {% if selected.scalar.posted_within == val %}selected{% endif %}>{{ lbl }}</option>
+        {% endfor %}
+      </select>
+      <label class="check"><input type="checkbox" name="closing_soon" value="1"
+        {% if selected.scalar.closing_soon %}checked{% endif %}> Closing ≤7d</label>
+    </fieldset>
+    <div class="an-filter-actions">
+      <button type="submit" class="btn-primary">Apply</button>
+      <a class="reset" href="/admin/analytics">Clear</a>
+    </div>
+  </form>
+
+  <div class="an-stats">
+    <div class="an-stat"><span class="v">{{ "{:,}".format(data.total) }}</span><span class="k">open listings</span></div>
+    <div class="an-stat"><span class="v">{{ data.summary.salary_pct }}%</span><span class="k">publish a salary</span></div>
+    <div class="an-stat"><span class="v">{{ data.summary.posted_7d }}</span><span class="k">posted last 7 days</span></div>
+    <div class="an-stat"><span class="v">{{ data.summary.closing_7d }}</span><span class="k">closing ≤7 days</span></div>
+    <div class="an-stat"><span class="v">{{ data.summary.remote }}</span><span class="k">remote / hybrid</span></div>
+    <div class="an-stat">
+      <span class="v">{% if data.summary.avg_salary_min %}${{ "{:,}".format((data.summary.avg_salary_min)|round|int) }}{% else %}—{% endif %}</span>
+      <span class="k">avg min salary</span>
+    </div>
+  </div>
+
+  <div class="an-grid">
+    {{ bars("By role family", data.by_role_family) }}
+    {{ bars("By level band", data.by_level_band) }}
+    {{ bars("By state / territory", data.by_state) }}
+    {{ bars("By work type", data.by_work_type) }}
+    {{ bars("By time fraction", data.by_time_fraction) }}
+    {{ bars("By discipline", data.by_discipline) }}
+    {{ bars("Top universities", data.by_university) }}
+  </div>
+</div>
+{% endblock %}

@@ -10,7 +10,31 @@ from sqlalchemy import Select, func, or_, select
 from sqlalchemy.orm import Session
 
 from app.config import load_universities
-from app.models import Listing
+from app.models import FeaturedJob, Listing
+
+
+def load_featured(session: Session, limit: int = 3) -> list[dict]:
+    """Return up to `limit` featured jobs (open only), joined to their listing,
+    ordered by position. Each dict = {featured, listing}."""
+    rows = session.execute(
+        select(FeaturedJob, Listing)
+        .join(Listing, Listing.id == FeaturedJob.listing_id)
+        .where(Listing.status == "open")
+        .order_by(FeaturedJob.position, FeaturedJob.created_at)
+        .limit(limit)
+    ).all()
+    return [{"featured": f, "listing": l} for (f, l) in rows]
+
+
+def load_featured_admin(session: Session) -> list[dict]:
+    """All featured (incl. stale/closed) with their listing if it still exists —
+    for the admin manager. Left join so a featured row survives listing churn."""
+    rows = session.execute(
+        select(FeaturedJob, Listing)
+        .join(Listing, Listing.id == FeaturedJob.listing_id, isouter=True)
+        .order_by(FeaturedJob.position, FeaturedJob.created_at)
+    ).all()
+    return [{"featured": f, "listing": l} for (f, l) in rows]
 
 
 def _group_map() -> dict[str, list[str]]:
@@ -152,6 +176,59 @@ def _facets(session: Session, f: Filters) -> dict:
         "total_open": total_open,
         "with_salary": with_salary,
         "salary_pct": round(100 * with_salary / total_open) if total_open else 0,
+    }
+
+
+_BAND_ORDER = {b: i for i, b in enumerate(
+    ["entry", "early-career", "mid", "senior", "leadership"])}
+
+
+def analytics(session: Session, f: Filters) -> dict:
+    """Aggregate the filtered listing set across every dimension, for the dashboard.
+    Respects the same Filters as the board, so you can analyse any subset."""
+    base = _apply(select(Listing), f).subquery()
+    now = dt.datetime.now(dt.timezone.utc)
+
+    def total(*conds) -> int:
+        stmt = select(func.count()).select_from(base)
+        for c in conds:
+            stmt = stmt.where(c)
+        return session.scalar(stmt) or 0
+
+    def by(col, limit: int | None = None, order: str = "count") -> dict:
+        stmt = (select(col, func.count()).select_from(base)
+                .where(col.is_not(None)).group_by(col))
+        stmt = stmt.order_by(func.count().desc()) if order == "count" else stmt.order_by(col)
+        rows = [(v, c) for v, c in session.execute(stmt).all()]
+        if order == "band":
+            rows.sort(key=lambda r: _BAND_ORDER.get(r[0], 99))
+        if limit:
+            rows = rows[:limit]
+        return {"rows": rows, "max": max((c for _, c in rows), default=0)}
+
+    c = base.c
+    n = total()
+    with_salary = total(c.salary_min.is_not(None))
+    return {
+        "total": n,
+        "summary": {
+            "with_salary": with_salary,
+            "salary_pct": round(100 * with_salary / n) if n else 0,
+            "remote": total(c.remote_flag.is_(True)),
+            "posted_7d": total(c.posted_at >= now - dt.timedelta(days=7)),
+            "posted_30d": total(c.posted_at >= now - dt.timedelta(days=30)),
+            "closing_7d": total(c.closes_at.is_not(None), c.closes_at >= now,
+                                c.closes_at <= now + dt.timedelta(days=7)),
+            "avg_salary_min": session.scalar(select(func.avg(c.salary_min)).select_from(base)),
+            "avg_salary_max": session.scalar(select(func.avg(c.salary_max)).select_from(base)),
+        },
+        "by_state": by(c.state),
+        "by_role_family": by(c.role_family),
+        "by_level_band": by(c.level_band, order="band"),
+        "by_work_type": by(c.work_type),
+        "by_time_fraction": by(c.time_fraction),
+        "by_university": by(c.university, limit=12),
+        "by_discipline": by(c.discipline, limit=12),
     }
 
 

@@ -195,6 +195,22 @@ class SourceResolution(Base):
     resolved_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class FeaturedJob(Base):
+    """Admin-curated 'featured' listing shown in a tile at the top of the board,
+    with an optional recruiter interview video. `listing_id` is a plain reference
+    (no FK) so listing churn during crawls never breaks curation; the display
+    query left-joins and shows only featured whose listing is still open."""
+
+    __tablename__ = "featured_jobs"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    listing_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    position: Mapped[int] = mapped_column(Integer, default=1)   # display order (1..3)
+    video_url: Mapped[str | None] = mapped_column(Text)         # recruiter interview (optional)
+    headline: Mapped[str | None] = mapped_column(Text)          # short 'why featured' blurb
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class HttpCache(Base):
     """Conditional-request cache: ETag / Last-Modified per URL (see CRAWLING.md)."""
 

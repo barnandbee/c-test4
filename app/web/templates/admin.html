@@ -3,6 +3,7 @@
 {% block content %}
 <div class="admin">
   <h1>Source health</h1>
+  <p class="admin-summary"><a href="/admin/analytics">Analytics →</a> · <a href="/admin/featured">Featured roles →</a></p>
   {% if last_run %}
   <p class="admin-summary">
     Last refresh <strong>#{{ last_run.id }}</strong> · {{ last_run.status }} ·

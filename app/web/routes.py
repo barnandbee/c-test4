@@ -10,13 +10,20 @@ from xml.sax.saxutils import escape
 from fastapi import APIRouter, Depends, Form, Request
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import desc, select
+from sqlalchemy import desc, func, select
 from sqlalchemy.orm import Session
 
 from app.config import UNIVERSITY_GROUPS, STATES, get_settings, load_universities
 from app.db import get_session
 from app.models import AdapterRun, CrawlRun, Listing, SavedSearch, utcnow
-from app.queries import Filters, facet_values, search
+from app.queries import (
+    Filters,
+    analytics,
+    facet_values,
+    load_featured,
+    load_featured_admin,
+    search,
+)
 
 router = APIRouter()
 _TEMPLATES = Jinja2Templates(directory=str(Path(__file__).resolve().parent / "templates"))
@@ -141,16 +148,20 @@ def _template_context(request: Request, session: Session) -> dict:
 def index(request: Request, session: Session = Depends(get_session)):
     f = filters_from_request(request)
     result = search(session, f)
+    partial = request.query_params.get("partial") == "1"
     ctx = _template_context(request, session)
     ctx.update({
         "result": result,
         "f": f,
         "selected": _selected(request),
         "query_string": request.url.query,
-        "partial": request.query_params.get("partial") == "1",
+        "partial": partial,
+        # Featured strip only on the full page, and only on the unfiltered default view
+        # so it doesn't compete with an active search.
+        "featured": [] if (partial or request.url.query) else load_featured(session),
     })
     # Progressive enhancement: return just the results fragment for live filtering.
-    template = "results.html" if ctx["partial"] else "index.html"
+    template = "results.html" if partial else "index.html"
     return _TEMPLATES.TemplateResponse(request, template, ctx)
 
 
@@ -333,6 +344,84 @@ def admin_probe(request: Request, token: str = "", url: str = "", xhr: str = "0"
     except Exception as exc:  # noqa: BLE001
         report = f"ERROR fetching {url}\n{type(exc).__name__}: {exc}"
     return Response(report, media_type="text/plain")
+
+
+@router.get("/admin/analytics", response_class=HTMLResponse)
+def admin_analytics(request: Request, session: Session = Depends(get_session)):
+    f = filters_from_request(request)
+    data = analytics(session, f)
+    ctx = {
+        "request": request, "data": data, "f": f,
+        "selected": _selected(request),
+        "states": STATES, "role_families": ROLE_FAMILIES, "level_bands": LEVEL_BANDS,
+        "posted_windows": POSTED_WINDOWS, "groups": UNIVERSITY_GROUPS,
+        "query_string": request.url.query,
+    }
+    return _TEMPLATES.TemplateResponse(request, "analytics.html", ctx)
+
+
+# --- featured jobs manager ---------------------------------------------------
+def _admin_ok(token: str) -> bool:
+    expected = get_settings().admin_token
+    return bool(expected) and token == expected
+
+
+@router.get("/admin/featured", response_class=HTMLResponse)
+def admin_featured(request: Request, q: str = "", session: Session = Depends(get_session)):
+    featured = load_featured_admin(session)
+    matches = []
+    if q:
+        res = search(session, Filters(q=q, per_page=15))
+        matches = res.listings
+    ctx = {
+        "request": request, "featured": featured, "matches": matches, "q": q,
+        "trigger_enabled": bool(get_settings().admin_token),
+        "flash": request.query_params.get("flash"),
+    }
+    return _TEMPLATES.TemplateResponse(request, "featured.html", ctx)
+
+
+@router.post("/admin/featured/add")
+def admin_featured_add(token: str = Form(""), listing_id: str = Form(...),
+                       session: Session = Depends(get_session)):
+    from app.models import FeaturedJob
+    if not _admin_ok(token):
+        return RedirectResponse("/admin/featured?flash=bad-token", status_code=303)
+    exists = session.scalar(select(FeaturedJob).where(FeaturedJob.listing_id == listing_id))
+    if not exists:
+        n = session.scalar(select(func.count()).select_from(FeaturedJob)) or 0
+        session.add(FeaturedJob(listing_id=listing_id, position=n + 1))
+        session.commit()
+    return RedirectResponse("/admin/featured?flash=added", status_code=303)
+
+
+@router.post("/admin/featured/update")
+def admin_featured_update(token: str = Form(""), fid: int = Form(...),
+                          video_url: str = Form(""), headline: str = Form(""),
+                          position: int = Form(1), session: Session = Depends(get_session)):
+    from app.models import FeaturedJob
+    if not _admin_ok(token):
+        return RedirectResponse("/admin/featured?flash=bad-token", status_code=303)
+    fj = session.get(FeaturedJob, fid)
+    if fj:
+        fj.video_url = video_url.strip() or None
+        fj.headline = headline.strip() or None
+        fj.position = position
+        session.commit()
+    return RedirectResponse("/admin/featured?flash=saved", status_code=303)
+
+
+@router.post("/admin/featured/remove")
+def admin_featured_remove(token: str = Form(""), fid: int = Form(...),
+                          session: Session = Depends(get_session)):
+    from app.models import FeaturedJob
+    if not _admin_ok(token):
+        return RedirectResponse("/admin/featured?flash=bad-token", status_code=303)
+    fj = session.get(FeaturedJob, fid)
+    if fj:
+        session.delete(fj)
+        session.commit()
+    return RedirectResponse("/admin/featured?flash=removed", status_code=303)
 
 
 def _iso(value: dt.datetime | None) -> str | None:
