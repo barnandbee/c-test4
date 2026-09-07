@@ -186,10 +186,10 @@ def run_one(client: PoliteClient, university: dict, session: Session, run_id: in
         records[rec["id"]] = rec
     records_list = list(records.values())
 
-    # Staging (for debugging a run without re-crawling).
+    # Staging (for debugging a run without re-crawling). `rec` already carries
+    # university_slug via _UPSERT_COLUMNS, so only run_id is passed separately.
     session.add_all(
-        StagingListing(run_id=run_id, university_slug=slug,
-                       **{k: rec.get(k) for k in (*_UPSERT_COLUMNS, "id")})
+        StagingListing(run_id=run_id, **{k: rec.get(k) for k in (*_UPSERT_COLUMNS, "id")})
         for rec in records_list
     )
 
@@ -233,8 +233,18 @@ def run_full_refresh(only: list[str] | None = None) -> int:
         ok = failed = 0
         try:
             for uni in universities:
-                health = run_one(client, uni, session, run.id)
-                if health.status in {"ok", "no_change", "suspect_low_yield"}:
+                try:
+                    health = run_one(client, uni, session, run.id)
+                    status = health.status
+                except Exception as exc:  # noqa: BLE001 — a bug for one uni must not kill the run
+                    session.rollback()
+                    session.add(AdapterRun(
+                        run_id=run.id, university_slug=uni["slug"],
+                        adapter=uni.get("adapter", "?"), status="failed",
+                        error=f"{type(exc).__name__}: {exc}",
+                    ))
+                    status = "failed"
+                if status in {"ok", "no_change", "suspect_low_yield"}:
                     ok += 1
                 else:
                     failed += 1
