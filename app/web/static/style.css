@@ -78,6 +78,11 @@ code { font-family: var(--mono); font-size: .88em; background: var(--surface-2);
 .site-header .wrap { display: flex; align-items: center; gap: 20px; padding-top: 14px; padding-bottom: 14px; }
 .brand { display: inline-flex; align-items: center; gap: 9px; text-decoration: none; color: var(--ink); }
 .brand-logo { height: 40px; width: auto; display: block; }
+/* Logo art is navy/orange on white; on the dark header give it a white plate so
+   it stays legible whether the PNG is transparent or white-backed. */
+@media (prefers-color-scheme: dark) {
+  .brand-logo { background: #fff; padding: 4px 8px; border-radius: 6px; }
+}
 .brand-text:not([hidden]) { display: inline-flex; align-items: baseline; gap: 9px; }
 .brand-mark { color: var(--amber-bright); font-size: 20px; transform: translateY(2px); }
 .brand-name { font-weight: 800; letter-spacing: .14em; font-size: 15px; }
