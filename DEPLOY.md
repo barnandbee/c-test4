@@ -37,17 +37,23 @@ instance, or split ingestion into a dedicated service (below).
 
 ### Live crawling needs verified endpoints
 
-Render services have outbound internet, so live crawling *can* work here (unlike
-the build sandbox). But the ATS endpoints in `config/universities.yaml` were
-researched, not live-verified. From the Render **Shell** tab on the web service:
+Render services have outbound internet, so live crawling works here (unlike the
+build sandbox). The crawler **auto-discovers** each university's real ATS endpoint
+from its careers page, so you don't have to hand-verify 42 endpoints. From the
+Render **Shell** tab on the web service:
 
 ```bash
-python -m app.ingest.runner --verify          # probe every endpoint, print status
-python -m app.ingest.runner --only uwa         # crawl one to sanity-check
+python -m app.ingest.runner --discover   # visit each careers page, detect its ATS, cache it
+python -m app.ingest.runner              # full crawl using the discovered endpoints
 ```
 
-Fix any endpoint in `config/universities.yaml` (a one-line edit) and redeploy.
-Until then the board runs happily on seed data.
+`--discover` prints a line per university showing the detected platform + params
+(and what the config had guessed). The next crawl uses the discovered values, and
+the scheduler keeps them fresh automatically (re-discovering weekly). Anything it
+can't detect (a careers page that loads jobs via JavaScript, or an unusual
+platform) stays on its configured fallback and shows on `/admin`; fix those few in
+`config/universities.yaml` and redeploy. Until the first crawl finishes, the board
+runs on seed data.
 
 ## Optional: a dedicated worker (paid tiers)
 

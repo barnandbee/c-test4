@@ -8,12 +8,14 @@ CLI:
     python -m app.ingest.runner              # full refresh
     python -m app.ingest.runner --only uwa   # single university
     python -m app.ingest.runner --verify     # just probe every endpoint (needs egress)
+    python -m app.ingest.runner --discover   # auto-detect each ATS from its careers page
     python -m app.ingest.runner --init-db    # create tables
 """
 from __future__ import annotations
 
 import argparse
 import datetime as dt
+import json
 import sys
 import time
 
@@ -24,6 +26,7 @@ from sqlalchemy.orm import Session
 from app.config import get_settings, load_universities
 from app.db import SessionLocal, engine
 from app.ingest.base import NotModified, PoliteClient, RobotsDisallowed
+from app.ingest.discover import detect
 from app.ingest.reconcile import plan_reconciliation
 from app.ingest.registry import get_adapter
 from app.models import (
@@ -32,10 +35,14 @@ from app.models import (
     CrawlRun,
     HttpCache,
     Listing,
+    SourceResolution,
     StagingListing,
     utcnow,
 )
 from app.normalise.core import normalise_record
+
+# Re-detect an already-resolved source at most this often.
+_RESOLUTION_TTL = dt.timedelta(days=7)
 
 _UPSERT_COLUMNS = (
     "source_job_id", "university", "university_slug", "state", "campus_location",
@@ -109,8 +116,44 @@ def _expire_past_closing(session: Session, slug: str) -> None:
     )
 
 
+def resolve_source(client: PoliteClient, university: dict, session: Session) -> dict:
+    """Return the effective university record (adapter + params) to crawl with.
+
+    Discovery-first: fetch the careers page, detect the real ATS endpoint, and
+    cache it. This makes wrong config guesses self-correcting on a host with open
+    egress. Falls back to the configured adapter/params when discovery can't run
+    or finds nothing.
+    """
+    slug = university["slug"]
+    cached = session.get(SourceResolution, slug)
+    if cached and cached.ok and (utcnow() - cached.resolved_at) < _RESOLUTION_TTL:
+        return {**university, "adapter": cached.adapter, "params": json.loads(cached.params_json)}
+
+    careers_url = university.get("careers_url")
+    detection = None
+    if careers_url:
+        try:
+            res = client.fetch(careers_url)
+            if not res.not_modified:
+                body = res.content.decode("utf-8", errors="replace")
+                detection = detect(body, res.final_url or res.url)
+        except Exception:  # discovery is best-effort; fall back to config
+            detection = None
+
+    if detection:
+        session.merge(SourceResolution(
+            university_slug=slug, adapter=detection.adapter,
+            params_json=json.dumps(detection.params), matched_url=detection.matched_url,
+            source="discovered", ok=True, resolved_at=utcnow(),
+        ))
+        return {**university, "adapter": detection.adapter, "params": detection.params}
+
+    return university
+
+
 def run_one(client: PoliteClient, university: dict, session: Session, run_id: int) -> AdapterRun:
     slug = university["slug"]
+    university = resolve_source(client, university, session)
     adapter = get_adapter(university["adapter"])
     started = time.monotonic()
     health = AdapterRun(run_id=run_id, university_slug=slug, adapter=adapter.name, status="ok")
@@ -224,10 +267,51 @@ def verify_endpoints() -> None:
         client.close()
 
 
+def discover_sources(only: list[str] | None = None) -> None:
+    """Fetch each careers page, detect its ATS, and cache the resolution. Prints a
+    report and persists results so the next crawl uses the discovered endpoints.
+    Needs egress."""
+    init_db()
+    universities = load_universities()
+    if only:
+        universities = [u for u in universities if u["slug"] in set(only)]
+    client = PoliteClient()
+    session = SessionLocal()
+    found = 0
+    try:
+        for uni in universities:
+            slug = uni["slug"]
+            careers_url = uni.get("careers_url", "")
+            try:
+                res = client.fetch(careers_url)
+                body = res.content.decode("utf-8", errors="replace")
+                det = detect(body, res.final_url or res.url)
+            except Exception as exc:  # noqa: BLE001
+                print(f"[ERR ] {slug:12} {careers_url}  -> {exc}")
+                continue
+            if det:
+                found += 1
+                session.merge(SourceResolution(
+                    university_slug=slug, adapter=det.adapter,
+                    params_json=json.dumps(det.params), matched_url=det.matched_url,
+                    source="discovered", ok=True, resolved_at=utcnow(),
+                ))
+                session.commit()
+                print(f"[ OK ] {slug:12} {det.adapter:14} {det.params}  (config said {uni['adapter']})")
+            else:
+                print(f"[ -- ] {slug:12} no ATS detected on {careers_url}  (config: {uni['adapter']})")
+        print(f"\nDiscovered {found}/{len(universities)} sources. Run a refresh to crawl them.")
+    finally:
+        client.close()
+        session.close()
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Aus Uni Jobs Board ingestion runner")
     parser.add_argument("--only", nargs="+", help="restrict to these university slugs")
     parser.add_argument("--verify", action="store_true", help="probe endpoints only")
+    parser.add_argument("--discover", action="store_true",
+                        help="auto-detect each ATS from its careers page and cache it")
     parser.add_argument("--init-db", action="store_true", help="create tables and exit")
     args = parser.parse_args(argv)
 
@@ -237,6 +321,9 @@ def main(argv: list[str] | None = None) -> int:
         return 0
     if args.verify:
         verify_endpoints()
+        return 0
+    if args.discover:
+        discover_sources(only=args.only)
         return 0
 
     start = dt.datetime.now()

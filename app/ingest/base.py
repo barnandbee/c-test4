@@ -30,6 +30,7 @@ class FetchResult:
     status_code: int
     content: bytes
     not_modified: bool = False
+    final_url: str = ""   # URL after following redirects (for platform discovery)
 
 
 class RobotsDisallowed(Exception):
@@ -142,7 +143,7 @@ class PoliteClient:
                 "etag": resp.headers.get("ETag"),
                 "last_modified": resp.headers.get("Last-Modified"),
             }
-            return FetchResult(url, resp.status_code, resp.content)
+            return FetchResult(url, resp.status_code, resp.content, final_url=str(resp.url))
 
         raise last_exc or httpx.HTTPError(f"failed to fetch {url}")
 

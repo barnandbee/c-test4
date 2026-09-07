@@ -63,10 +63,18 @@ app/ingest/<family>.py   ───┼──► RawJob  ──► normalise ─�
                                               FastAPI + server-rendered HTMX-style UI
 ```
 
+- **Auto-discovery** (`app/ingest/discover.py`): before crawling, the runner fetches
+  each university's careers page and detects the real ATS endpoint from it (Workday
+  tenant/dc/site, PageUp client/path, SmartRecruiters company, NGA.NET host, Oracle
+  site). The result is cached (`source_resolutions`) and reused for a week. This
+  means the hand-configured endpoints in `universities.yaml` are just a *fallback* —
+  wrong guesses self-correct on a host with network egress. Run it explicitly with
+  `python -m app.ingest.runner --discover`.
 - **Adapters** split into `endpoints()` (which URLs to fetch) and `parse()` (pure,
-  fixture-tested). Fetching goes through `PoliteClient`, which enforces every rule
-  in [`CRAWLING.md`](./CRAWLING.md): robots.txt, identifying User-Agent, per-domain
-  rate limiting, exponential backoff, and conditional requests.
+  fixture-tested). PageUp walks *all* listing pages (not just page one). Fetching
+  goes through `PoliteClient`, which enforces every rule in [`CRAWLING.md`](./CRAWLING.md):
+  robots.txt, identifying User-Agent, per-domain rate limiting, exponential backoff,
+  and conditional requests.
 - **Normalisation** is table-driven (`config/level_bands.yaml`,
   `role_families.yaml`, `disciplines.yaml`) — reviewable YAML, not scattered regex.
 - **Reconciliation** (`app/ingest/reconcile.py`) is yield-guarded: a crawl that
