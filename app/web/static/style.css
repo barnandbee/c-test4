@@ -1,36 +1,45 @@
 /* =========================================================================
    AU Uni Jobs Board — visual system
-   A crisp editorial/Swiss-influenced take: near-monochrome ink on paper, one
-   electric cobalt accent, hairline rules, tabular numerals, generous type
-   discipline. Deliberately NOT cream + serif + terracotta.
+   Calm & professional: deep navy backbone with periwinkle secondary accents on
+   an off-white ground, oranges as warm punctuation. Crimson Pro for headings and
+   job titles; a clean sans for dense data. Palette:
+     909CC2 periwinkle · 084887 navy · F58A07 orange · F9AB55 soft orange · F7F5FB white
    ========================================================================= */
 
 :root {
-  --ink: #14161a;
-  --ink-2: #5b6270;
-  --ink-3: #878e9b;
-  --paper: #ffffff;
-  --surface: #f6f7f9;
-  --surface-2: #eef0f4;
-  --hair: #e3e6eb;
-  --accent: #2947ff;         /* electric cobalt */
-  --accent-ink: #1a2fbf;
-  --accent-wash: #eef1ff;
-  --amber: #b45309;          /* closing-soon signal */
-  --amber-wash: #fff4e6;
-  --good: #15803d;
-  --bad: #b91c1c;
+  --ink: #16233a;            /* body text — deep navy-slate */
+  --ink-2: #55617a;          /* secondary text */
+  --ink-3: #8791a8;          /* tertiary — periwinkle-grey */
+  --bg: #f7f5fb;             /* page ground (palette white) */
+  --paper: #ffffff;          /* header, cards, rows */
+  --surface: #f1f0f9;        /* subtle blue-lavender surface */
+  --surface-2: #e7e9f3;
+  --hair: #e2e2ee;           /* hairline */
+  --accent: #084887;         /* NAVY — primary/structural (brand, buttons, links, focus) */
+  --accent-ink: #063a6e;     /* navy hover/deeper */
+  --accent-wash: #e8eff7;    /* light navy tint */
+  --blue: #909cc2;           /* periwinkle secondary */
+  --blue-wash: #eef1f8;
+  --amber: #d5730a;          /* orange signal (text-safe shade of F58A07) */
+  --amber-bright: #f58a07;   /* full orange for fills/marks */
+  --amber-2: #f9ab55;        /* soft orange highlight */
+  --amber-wash: #fff2e2;     /* soft orange tint */
+  --good: #1c7c54;
+  --bad: #b3352b;
   --radius: 7px;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --serif: "Crimson Pro", Georgia, "Times New Roman", serif;
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --ink: #e8eaed; --ink-2: #a2a9b6; --ink-3: #767d8b;
-    --paper: #0e0f12; --surface: #16181d; --surface-2: #1c1f26; --hair: #262a31;
-    --accent: #6a80ff; --accent-ink: #93a4ff; --accent-wash: #171b2e;
-    --amber: #f0a552; --amber-wash: #2a2014;
+  :root:not([data-theme="light"]) {
+    --ink: #eaeef7; --ink-2: #a7b3cc; --ink-3: #74829e;
+    --bg: #0c1424; --paper: #111c33; --surface: #16233c; --surface-2: #1d2b47;
+    --hair: #253552;
+    --accent: #5b9bd8; --accent-ink: #86b8e8; --accent-wash: #142743;
+    --blue: #909cc2; --blue-wash: #1a2740;
+    --amber: #f9ab55; --amber-bright: #f58a07; --amber-2: #f9ab55; --amber-wash: #2c2013;
     --good: #4ade80; --bad: #f87171;
   }
 }
@@ -43,10 +52,13 @@ body {
   font-size: 15px;
   line-height: 1.5;
   color: var(--ink);
-  background: var(--paper);
+  background: var(--bg);
   font-variant-numeric: tabular-nums;
   -webkit-font-smoothing: antialiased;
 }
+/* Crimson Pro for headings + job titles; sans stays for tracked micro-labels. */
+h1, h2, h3 { font-family: var(--serif); font-weight: 700; letter-spacing: -0.01em; }
+.filters-head h2 { font-family: var(--sans); font-weight: 700; letter-spacing: .16em; }
 .wrap { max-width: 1240px; margin: 0 auto; padding: 0 24px; }
 a { color: var(--accent-ink); }
 code { font-family: var(--mono); font-size: .88em; background: var(--surface-2);
@@ -65,9 +77,9 @@ code { font-family: var(--mono); font-size: .88em; background: var(--surface-2);
   position: sticky; top: 0; z-index: 10; }
 .site-header .wrap { display: flex; align-items: baseline; gap: 20px; padding-top: 16px; padding-bottom: 16px; }
 .brand { display: inline-flex; align-items: baseline; gap: 9px; text-decoration: none; color: var(--ink); }
-.brand-mark { color: var(--accent); font-size: 20px; transform: translateY(2px); }
+.brand-mark { color: var(--amber-bright); font-size: 20px; transform: translateY(2px); }
 .brand-name { font-weight: 800; letter-spacing: .14em; font-size: 15px; }
-.brand-sep { color: var(--accent); }
+.brand-sep { color: var(--amber-bright); }
 .brand-tag { color: var(--ink-2); font-size: 13.5px; margin: 0; }
 .site-nav { margin-left: auto; display: flex; gap: 20px; }
 .site-nav a { text-decoration: none; color: var(--ink-2); font-size: 13.5px; font-weight: 600; }
@@ -111,7 +123,7 @@ input::placeholder { color: var(--ink-3); }
 .check, .radio { display: flex; align-items: center; gap: 8px; font-size: 13.5px;
   padding: 3px 0; color: var(--ink); cursor: pointer; text-transform: none; letter-spacing: 0;
   font-weight: 400; }
-.check input, .radio input { accent-color: var(--accent); width: 15px; height: 15px; }
+.check input, .radio input { accent-color: var(--amber-bright); width: 15px; height: 15px; }
 .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
 .radio-row { display: flex; flex-direction: column; gap: 0; margin-bottom: 6px; }
 .scroll { max-height: 220px; overflow-y: auto; padding-right: 6px;
@@ -127,7 +139,8 @@ input::placeholder { color: var(--ink-3); }
 .chip input { position: absolute; opacity: 0; inset: 0; cursor: pointer; }
 .chip span { display: inline-block; font-size: 11.5px; font-weight: 700; letter-spacing: .06em;
   padding: 5px 11px; border: 1px solid var(--hair); border-radius: 999px; color: var(--ink-2); }
-.chip input:checked + span { background: var(--accent); border-color: var(--accent); color: #fff; }
+/* Selected = warm: soft-orange fill stays light in both themes, so pin dark text. */
+.chip input:checked + span { background: var(--amber-2); border-color: var(--amber); color: #0c2340; }
 .chip input:focus-visible + span { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 .filters-foot { margin-top: 8px; }
@@ -164,10 +177,10 @@ input::placeholder { color: var(--ink-3); }
 .listing::before { content: ""; position: absolute; left: 0; top: 16px; bottom: 16px;
   width: 3px; border-radius: 3px; background: var(--hair); }
 .listing[data-band="leadership"]::before { background: var(--accent); }
-.listing[data-band="senior"]::before { background: #6a80ff; }
-.listing[data-band="mid"]::before { background: #8aa0ff; }
-.listing[data-band="early-career"]::before { background: #b7c3ff; }
-.listing[data-band="entry"]::before { background: #d7ddff; }
+.listing[data-band="senior"]::before { background: #2f6aa8; }
+.listing[data-band="mid"]::before { background: #6b8bbf; }
+.listing[data-band="early-career"]::before { background: var(--blue); }
+.listing[data-band="entry"]::before { background: #c3cce0; }
 .listing:hover { background: var(--surface); }
 
 .listing-top { display: flex; align-items: center; gap: 8px; margin-bottom: 3px; }
