@@ -43,6 +43,9 @@ class Settings(BaseSettings):
     # Scheduling: how many times/day the full refresh runs (kept low on purpose)
     refresh_times_per_day: int = 3
 
+    # Token gating the /admin "Run crawl now" trigger. Empty = trigger disabled.
+    admin_token: str = ""
+
     # Run the ingestion scheduler inside the web process (for hosts with no
     # separate worker, e.g. Render's free tier). Off by default: docker-compose
     # uses a dedicated `worker` service instead.

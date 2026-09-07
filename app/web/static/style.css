@@ -234,6 +234,20 @@ table.health .num { text-align: right; }
 .conf-high { background: color-mix(in srgb, var(--good) 15%, transparent); color: var(--good); }
 .conf-medium { background: var(--amber-wash); color: var(--amber); }
 .conf-low { background: color-mix(in srgb, var(--bad) 12%, transparent); color: var(--bad); }
+.muted { color: var(--ink-3); }
+
+.banner { padding: 10px 14px; border-radius: var(--radius); font-size: 13.5px; margin: 10px 0;
+  background: var(--surface-2); color: var(--ink); }
+.banner.ok { background: color-mix(in srgb, var(--good) 14%, transparent); color: var(--good); }
+.banner.bad { background: color-mix(in srgb, var(--bad) 14%, transparent); color: var(--bad); }
+.trigger-box { margin: 16px 0 24px; padding: 16px; border: 1px solid var(--hair);
+  border-radius: var(--radius); background: var(--surface); }
+.trigger-form { display: flex; flex-wrap: wrap; align-items: end; gap: 12px; }
+.trigger-form label { display: flex; flex-direction: column; gap: 5px; font-size: 12px;
+  font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-2); }
+.trigger-form input { width: 220px; }
+.trigger-form input.only { width: 240px; align-self: flex-end; }
+.trigger-form .btn-primary { width: auto; padding: 9px 20px; }
 
 /* footer ------------------------------------------------------------------ */
 .site-footer { color: var(--ink-3); font-size: 12.5px; padding: 24px; border-top: 1px solid var(--hair); margin-top: 20px; }

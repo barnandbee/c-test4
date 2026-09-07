@@ -13,7 +13,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy import desc, select
 from sqlalchemy.orm import Session
 
-from app.config import UNIVERSITY_GROUPS, STATES, load_universities
+from app.config import UNIVERSITY_GROUPS, STATES, get_settings, load_universities
 from app.db import get_session
 from app.models import AdapterRun, CrawlRun, Listing, SavedSearch, utcnow
 from app.queries import Filters, facet_values, search
@@ -253,11 +253,18 @@ def _rss_item(l: Listing) -> str:
 # --- admin / health ----------------------------------------------------------
 @router.get("/admin", response_class=HTMLResponse)
 def admin(request: Request, session: Session = Depends(get_session)):
+    from app.ingest import trigger
+    from app.models import SourceResolution
+
     universities = {u["slug"]: u for u in load_universities()}
     # Latest AdapterRun per university.
     latest: dict[str, AdapterRun] = {}
     for ar in session.scalars(select(AdapterRun).order_by(desc(AdapterRun.started_at))):
         latest.setdefault(ar.university_slug, ar)
+    # Auto-discovery results per university (what the ATS actually resolved to).
+    resolved: dict[str, SourceResolution] = {
+        r.university_slug: r for r in session.scalars(select(SourceResolution))
+    }
 
     now = utcnow()
     rows = []
@@ -270,10 +277,38 @@ def admin(request: Request, session: Session = Depends(get_session)):
             "uni": uni, "slug": slug, "run": ar,
             "stale": stale,
             "confidence": uni.get("confidence", "?"),
+            "resolved": resolved.get(slug),
         })
     last_run = session.scalar(select(CrawlRun).order_by(desc(CrawlRun.started_at)))
-    ctx = {"request": request, "rows": rows, "last_run": last_run, "now": now}
+    ctx = {
+        "request": request, "rows": rows, "last_run": last_run, "now": now,
+        "trigger_enabled": bool(get_settings().admin_token),
+        "trigger": trigger.status(),
+        "flash": request.query_params.get("flash"),
+    }
     return _TEMPLATES.TemplateResponse(request, "admin.html", ctx)
+
+
+@router.post("/admin/refresh")
+def admin_refresh(request: Request, token: str = Form(""),
+                  only: str = Form("")):
+    """Kick off a full crawl (auto-discovering endpoints) in the background.
+
+    Token-gated so nobody but the operator can make the server crawl. Works without
+    shell access — the button on /admin posts here.
+    """
+    from app.ingest import trigger
+
+    expected = get_settings().admin_token
+    if not expected:
+        return RedirectResponse("/admin?flash=trigger-disabled", status_code=303)
+    if token != expected:
+        return RedirectResponse("/admin?flash=bad-token", status_code=303)
+    only_list = [s for s in only.replace(",", " ").split() if s] or None
+    started = trigger.start(only=only_list)
+    return RedirectResponse(
+        f"/admin?flash={'started' if started else 'already-running'}", status_code=303
+    )
 
 
 def _iso(value: dt.datetime | None) -> str | None:
