@@ -22,6 +22,10 @@ from app.normalise.core import RawJob
 
 _JOB_URL_RE = re.compile(r"/job/(\d+)")
 _MAX_PAGES = 40   # generous cap; no AU uni lists this many pages
+_XHR_HEADERS = {
+    "X-Requested-With": "XMLHttpRequest",
+    "Accept": "application/json, text/html;q=0.9, */*;q=0.8",
+}
 
 
 class PageUpAdapter(Adapter):
@@ -70,18 +74,43 @@ class PageUpAdapter(Adapter):
     def _paginate(self, client: PoliteClient, university: dict, listing_url: str) -> list[RawJob]:
         seen: set[str] = set()
         jobs: list[RawJob] = []
-        first_not_modified = False
-        for page in range(1, _MAX_PAGES + 1):
-            url = _with_page(listing_url, page)
-            # XHR headers make PageUp return the job data (JSON, often wrapping an
-            # HTML fragment) instead of a JavaScript shell that has no jobs in it.
-            result = client.fetch(url, headers={
-                "X-Requested-With": "XMLHttpRequest",
-                "Accept": "application/json, text/html;q=0.9, */*;q=0.8",
-            })
+
+        # Decide the fetch mode on page 1. PageUp's default listing is
+        # server-rendered HTML, so try a plain GET first. Only if that yields
+        # nothing fall back to the XHR/JSON API (for genuine JS-shell tenants):
+        # sending XHR headers to a server-rendered tenant flips its response to a
+        # JSON body our fragment parser can't read, which silently zeroed out
+        # otherwise-healthy boards.
+        url1 = _with_page(listing_url, 1)
+        result = client.fetch(url1)
+        if result.not_modified:
+            raise NotModified(listing_url)
+        page_jobs = self.parse(result.content, university, url1)
+        page_headers: dict | None = None
+        if not page_jobs:
+            # Drop any validator the plain request cached so the retry isn't
+            # answered with a 304 for the wrong representation.
+            cache = getattr(client, "_cache", None)
+            if isinstance(cache, dict):
+                cache.pop(url1, None)
+            result = client.fetch(url1, headers=_XHR_HEADERS)
             if result.not_modified:
-                if page == 1:
-                    first_not_modified = True
+                raise NotModified(listing_url)
+            page_jobs = self.parse(result.content, university, url1)
+            page_headers = _XHR_HEADERS
+
+        for j in page_jobs:
+            if j.source_job_id not in seen:
+                seen.add(j.source_job_id)
+                jobs.append(j)
+        if not jobs:
+            return []
+
+        # Walk the remaining pages using whichever mode worked on page 1.
+        for page in range(2, _MAX_PAGES + 1):
+            url = _with_page(listing_url, page)
+            result = client.fetch(url, headers=page_headers or {})
+            if result.not_modified:
                 break
             page_jobs = self.parse(result.content, university, url)
             new = [j for j in page_jobs if j.source_job_id not in seen]
@@ -89,8 +118,6 @@ class PageUpAdapter(Adapter):
                 break  # no new ids -> past the last page
             seen.update(j.source_job_id for j in new)
             jobs.extend(new)
-        if first_not_modified:
-            raise NotModified(listing_url)
         return jobs
 
     def parse(self, content: bytes, university: dict, source_url: str) -> list[RawJob]:

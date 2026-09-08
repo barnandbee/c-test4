@@ -26,6 +26,26 @@ class FakeClient:
             raise httpx.HTTPStatusError("404", request=None, response=None)
         return FetchResult(url, 200, self.pages[url], final_url=url)
 
+
+class _HeaderAwareClient:
+    """Fake client that serves different bytes for plain vs XHR requests, so the
+    PageUp plain-first / XHR-fallback logic can be exercised."""
+
+    def __init__(self, plain: dict[str, bytes], xhr: dict[str, bytes]):
+        self.plain = plain
+        self.xhr = xhr
+        self.xhr_requests = 0
+
+    def fetch(self, url, method="GET", **kwargs):
+        is_xhr = "X-Requested-With" in (kwargs.get("headers") or {})
+        table = self.xhr if is_xhr else self.plain
+        if is_xhr:
+            self.xhr_requests += 1
+        if url not in table:
+            import httpx
+            raise httpx.HTTPStatusError("404", request=None, response=None)
+        return FetchResult(url, 200, table[url], final_url=url)
+
 UWA = {"slug": "uwa", "name": "University of Western Australia", "state": "WA",
        "params": {"listing_url": "https://jobs.uwa.edu.au/cw/en/listing/",
                   "feed_url": "https://jobs.uwa.edu.au/cw/en/listing/?rss=1"}}
@@ -204,3 +224,42 @@ class TestPageUpPagination:
         jobs = PageUpAdapter().fetch(client, uni)
         assert sorted(j.source_job_id for j in jobs) == ["1", "2"]
         assert len(client.requested) == 2  # page 1 (new), page 2 (no new ids) -> stop
+
+    def test_prefers_plain_html_when_available(self):
+        # A server-rendered tenant must be read via a plain GET; sending XHR
+        # headers to it would flip the response to unparseable JSON. Verify the
+        # adapter does NOT escalate to XHR when plain HTML already has jobs.
+        base = "https://jobs.uwa.edu.au/cw/en/listing/"
+        client = _HeaderAwareClient(
+            plain={base + "?page=1": self._page([1, 2]), base + "?page=2": self._page([])},
+            xhr={base + "?page=1": b"{}"},  # would yield nothing if wrongly used
+        )
+        uni = {"slug": "uwa", "name": "UWA", "state": "WA", "params": {"listing_url": base}}
+        jobs = PageUpAdapter().fetch(client, uni)
+        assert sorted(j.source_job_id for j in jobs) == ["1", "2"]
+        assert client.xhr_requests == 0
+
+    def test_falls_back_to_xhr_for_js_shell(self):
+        # A JS-shell tenant returns no jobs on a plain GET; the adapter must then
+        # retry with XHR headers and paginate in that mode.
+        import json
+        base = "https://jobs.uwa.edu.au/cw/en/listing/"
+        shell = b"<html><body><div id='app'></div></body></html>"
+
+        def _json_page(ids):
+            frag = "".join(
+                f'<li><article><h3><a href="/cw/en/job/{i}/role-{i}">Role {i}</a></h3>'
+                f'<span class="location">Perth</span></article></li>' for i in ids
+            )
+            return json.dumps({"results": frag or "<p>none</p>", "count": len(ids)}).encode()
+
+        client = _HeaderAwareClient(
+            plain={base + f"?page={n}": shell for n in range(1, 42)},
+            xhr={base + "?page=1": _json_page([1, 2]),
+                 base + "?page=2": _json_page([3]),
+                 base + "?page=3": _json_page([])},
+        )
+        uni = {"slug": "uwa", "name": "UWA", "state": "WA", "params": {"listing_url": base}}
+        jobs = PageUpAdapter().fetch(client, uni)
+        assert sorted(j.source_job_id for j in jobs) == ["1", "2", "3"]
+        assert client.xhr_requests >= 1
