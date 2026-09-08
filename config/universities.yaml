@@ -61,12 +61,17 @@ universities:
     name: Australian Catholic University
     state: NSW
     groups: []
-    adapter: pageup
+    adapter: workday
     careers_url: https://www.acu.edu.au/about-acu/careers-at-acu
     params:
-      listing_url: https://careers.acu.edu.au/cw/en/listing/
-    confidence: medium
-    notes: ACU listed on THEunijobs; PageUp most likely. Multi-state employer, HQ NSW.
+      tenant: acu
+      dc: wd108
+      site: ACUCareers
+    confidence: high
+    notes: >
+      Confirmed Workday (acu.wd108.myworkdayjobs.com/ACUCareers). A legacy PageUp
+      apply host (secure.dc2.pageuppeople.com/apply/456) still exists; Workday is the
+      current external site. Auto-discovery re-confirms from the careers page.
 
   - slug: aut
     name: Australian University of Theology
@@ -131,11 +136,12 @@ universities:
     name: Southern Cross University
     state: NSW
     groups: [run]
-    adapter: pageup
+    adapter: nganet
     careers_url: https://www.scu.edu.au/careers-at-scu/
     params:
-      listing_url: https://jobs.scu.edu.au/cw/en/listing/
-    confidence: medium
+      listing_url: https://scu.nga.net.au/cp/index.cfm?event=jobs.listJobs&CurATC=EXT
+    confidence: high
+    notes: Confirmed NGA.NET (scu.nga.net.au). Not PageUp.
 
   - slug: une
     name: University of New England
@@ -222,9 +228,9 @@ universities:
     adapter: nganet
     careers_url: https://www.westernsydney.edu.au/careers
     params:
-      listing_url: https://uws.nga.net.au/cp/
-    confidence: low
-    notes: WSU uses NGA.NET (uws.nga.net.au). Auto-discovery confirms the host from the careers page.
+      listing_url: https://uws.nga.net.au/cp/index.cfm?event=jobs.listJobs&CurATC=EXT
+    confidence: high
+    notes: Confirmed NGA.NET (uws.nga.net.au — eRecruit for UWS). Auto-discovery re-confirms the host.
 
   # ------------------------------- NT --------------------------------
   - slug: cdu
@@ -310,12 +316,12 @@ universities:
     name: University of Southern Queensland
     state: QLD
     groups: [run]
-    adapter: pageup
+    adapter: nganet
     careers_url: https://www.unisq.edu.au/careers
     params:
-      listing_url: https://jobs.usq.edu.au/cw/en/listing/
-    confidence: medium
-    notes: Rebranded UniSQ; legacy usq.edu.au hosts may still serve the ATS.
+      listing_url: https://usq.nga.net.au/cp/index.cfm?event=jobs.listJobs&CurATC=EXT
+    confidence: high
+    notes: Confirmed NGA.NET (usq.nga.net.au). Not PageUp. Rebranded UniSQ (was USQ).
 
   - slug: unisc
     name: University of the Sunshine Coast
@@ -401,8 +407,9 @@ universities:
     adapter: pageup
     careers_url: https://federation.edu.au/careers
     params:
-      listing_url: https://jobs.federation.edu.au/cw/en/listing/
-    confidence: medium
+      listing_url: https://careers.pageuppeople.com/428/caw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp client 428 (careers.pageuppeople.com/428/caw/ — note /caw/ path).
 
   - slug: latrobe
     name: La Trobe University
@@ -443,11 +450,12 @@ universities:
     name: Swinburne University of Technology
     state: VIC
     groups: []
-    adapter: pageup
+    adapter: nganet
     careers_url: https://www.swinburne.edu.au/about/careers-at-swinburne/
     params:
-      listing_url: https://careers.swinburne.edu.au/cw/en/listing/
-    confidence: medium
+      listing_url: https://swinjobs.nga.net.au/cp/index.cfm?event=jobs.listJobs&CurATC=EXT
+    confidence: high
+    notes: Confirmed NGA.NET (swinjobs.nga.net.au). Not PageUp.
 
   - slug: divinity
     name: University of Divinity
@@ -485,8 +493,9 @@ universities:
     adapter: pageup
     careers_url: https://www.vu.edu.au/about-vu/careers-at-vu
     params:
-      listing_url: https://careers.vu.edu.au/cw/en/listing/
-    confidence: medium
+      listing_url: https://careers.pageuppeople.com/776/cw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp client 776 (apply host secure.dc2.pageuppeople.com/apply/776).
 
   # ------------------------------- WA --------------------------------
   - slug: curtin
@@ -517,11 +526,14 @@ universities:
     name: Murdoch University
     state: WA
     groups: [iru]
-    adapter: pageup
+    adapter: workday
     careers_url: https://www.murdoch.edu.au/careers
     params:
-      listing_url: https://jobs.murdoch.edu.au/cw/en/listing/
-    confidence: medium
+      tenant: murdoch
+      dc: wd3
+      site: MurdochCareers
+    confidence: high
+    notes: Confirmed Workday (murdoch.wd3.myworkdayjobs.com/MurdochCareers). Not PageUp.
 
   - slug: notredame
     name: University of Notre Dame Australia
