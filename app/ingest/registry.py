@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 from app.ingest.base import Adapter
+from app.ingest.clinch import ClinchAdapter
 from app.ingest.html_generic import HtmlGenericAdapter
 from app.ingest.nganet import NgaNetAdapter
 from app.ingest.oracle import OracleAdapter
@@ -17,6 +18,7 @@ _REGISTRY: dict[str, Adapter] = {
         NgaNetAdapter(),
         SmartRecruitersAdapter(),
         OracleAdapter(),
+        ClinchAdapter(),
         HtmlGenericAdapter(),
     )
 }

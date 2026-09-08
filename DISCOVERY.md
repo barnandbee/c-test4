@@ -34,6 +34,30 @@ patterns · **Live-verified:** ❌ no (see caveat)
 > CDU, UNE, JCU (only JCU *Singapore*/PageUp 931 found — a separate entity), UTS
 > (only UTS *College*/PageUp 1182 found — separate entity), Bond, Notre Dame.
 
+> **Live-crawl findings (batch 3 — from `/admin/probe` on Render):** the sector
+> has shifted since the table below was compiled. Two things now dominate the gaps:
+>
+> 1. **PageUp → Clinch migration.** Several unis moved off classic PageUp onto
+>    **Clinch** (PageUp's candidate product; `clinchtalent.com` / `career-pages.com`,
+>    `_clinch_session` cookie). Their old `careers.pageuppeople.com/<id>` URLs now
+>    301-redirect to a Clinch site (e.g. `external.jobs.uwa.edu.au`) that
+>    server-renders `/jobs/<slug>` cards. A new **`clinch` adapter** handles these.
+>    Confirmed Clinch: **UWA** (serving content — live), **ANU**, **UNSW** (see WAF
+>    below). Suspected Clinch (0-yield PageUp, not yet probed): CQU, CDU, Federation,
+>    Victoria U, UTAS, UTS.
+> 2. **AWS WAF anti-bot walls.** **All NGA.NET hosts** (ECU, QUT, Southern Cross,
+>    Swinburne, UniSQ) sit behind an **AWS WAF CAPTCHA** ("Human Verification"),
+>    and some Clinch tenants (ANU, UNSW) behind an **AWS WAF JS challenge**. These
+>    require solving a CAPTCHA / running challenge JS — i.e. defeating bot
+>    protection — which we do **not** do (CRAWLING.md). The `clinch` adapter
+>    detects a challenge page and reports an explicit `WafChallenge` block instead
+>    of scraping it. These universities are honest, documented gaps unless they
+>    stop challenging datacenter IPs.
+>
+> Still healthy and ingesting live: all Workday unis (UQ, Sydney, Melbourne, RMIT,
+> Macquarie, Flinders, ACU, Murdoch), Oracle (Wollongong), and the classic PageUp
+> boards (Monash, JCU, UniSC, Adelaide, CSU, Deakin, Canberra, La Trobe).
+
 ## ⚠️ Read this first
 
 The build environment has **no outbound network access** to university / ATS

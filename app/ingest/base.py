@@ -206,6 +206,13 @@ class NotModified(Exception):
     """The endpoint returned 304 — nothing to do, keep existing listings."""
 
 
+class WafChallenge(Exception):
+    """The endpoint is gated by an anti-bot WAF challenge (e.g. AWS WAF CAPTCHA
+    or JS proof-of-work). We do NOT bypass bot protection (CRAWLING.md), so this
+    is surfaced as an explicit, honest block rather than something to crawl. The
+    runner records it as a failed source and keeps any existing listings."""
+
+
 # -------------------------------------------------------------------------
 # Shared date parsing helpers (ATS feeds use a zoo of formats)
 # -------------------------------------------------------------------------

@@ -37,13 +37,16 @@ universities:
     name: Australian National University
     state: ACT
     groups: [go8]
-    adapter: pageup
+    adapter: clinch
     careers_url: https://jobs.anu.edu.au/
     params:
-      listing_url: https://jobs.anu.edu.au/cw/en/listing/
-      feed_url: https://jobs.anu.edu.au/cw/en/listing/?rss=1
-    confidence: high
-    notes: Classic PageUp vanity domain. RSS commonly available on PageUp cw sites.
+      listing_url: https://jobs.anu.edu.au/jobs/search
+    confidence: medium
+    notes: >
+      Migrated PageUp -> Clinch (jobs.anu.edu.au). Currently gated by an AWS WAF
+      anti-bot challenge from datacenter IPs, so crawls may report a WafChallenge
+      block; the adapter captures it whenever the WAF lets a request through. We
+      do not bypass the challenge (CRAWLING.md).
 
   - slug: canberra
     name: University of Canberra
@@ -158,13 +161,15 @@ universities:
     name: UNSW Sydney
     state: NSW
     groups: [go8]
-    adapter: pageup
+    adapter: clinch
     careers_url: https://www.jobs.unsw.edu.au/
     params:
-      listing_url: https://external-careers.jobs.unsw.edu.au/cw/en/listing/
-      feed_url: https://external-careers.jobs.unsw.edu.au/cw/en/listing/?rss=1
+      listing_url: https://external-careers.jobs.unsw.edu.au/jobs/search
     confidence: medium
-    notes: PageUp. UNSW uses an external-careers cw host; confirm exact subdomain.
+    notes: >
+      Migrated PageUp -> Clinch (external-careers.jobs.unsw.edu.au). Currently
+      gated by an AWS WAF anti-bot challenge from datacenter IPs (WafChallenge);
+      the adapter captures it when the WAF allows a request. Not bypassed.
 
   - slug: newcastle
     name: University of Newcastle
@@ -550,9 +555,12 @@ universities:
     name: University of Western Australia
     state: WA
     groups: [go8]
-    adapter: pageup
+    adapter: clinch
     careers_url: https://www.uwa.edu.au/jobs
     params:
-      listing_url: https://careers.pageuppeople.com/589/cw/en/listing/
+      listing_url: https://external.jobs.uwa.edu.au/jobs/search
     confidence: high
-    notes: Confirmed PageUp client 589 (careers.pageuppeople.com/589/cw/; jobs.uwa.edu.au did not resolve).
+    notes: >
+      Migrated PageUp -> Clinch (external.jobs.uwa.edu.au; old
+      careers.pageuppeople.com/589 now 301-redirects here). Server-renders
+      /jobs/<slug> cards. Live-verified via /admin/probe.
