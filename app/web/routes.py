@@ -122,6 +122,7 @@ def filters_from_request(request: Request) -> Filters:
         cities=many("city"),
         role_families=many("role_family"),
         level_bands=many("level_band"),
+        skills=many("skill"),
         classification=qp.get("classification") or None,
         work_types=many("work_type"),
         time_fractions=many("time_fraction"),
@@ -190,7 +191,7 @@ def _selected(request: Request) -> dict:
     """Map of currently-selected multi-values for checkbox state in the template."""
     qp = request.query_params
     keys = ["university", "group", "state", "city", "role_family", "level_band",
-            "work_type", "time_fraction", "discipline"]
+            "skill", "work_type", "time_fraction", "discipline"]
     sel = {k: set(qp.getlist(k)) for k in keys}
     sel["scalar"] = {
         "posted_within": qp.get("posted_within", ""),

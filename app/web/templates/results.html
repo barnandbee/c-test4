@@ -50,6 +50,12 @@
           {% if l.time_fraction %}<span class="m tf">{{ l.time_fraction|replace('-', ' ') }}</span>{% endif %}
         </div>
         {% if l.excerpt %}<p class="listing-excerpt">{{ l.excerpt }}</p>{% endif %}
+        {% if l.skills %}
+        <div class="listing-skills">
+          {% for sk in l.skills[:5] %}<span class="skill-chip">{{ sk }}</span>{% endfor %}
+          {% if l.skills|length > 5 %}<span class="skill-more">+{{ l.skills|length - 5 }}</span>{% endif %}
+        </div>
+        {% endif %}
       </div>
       <div class="listing-side">
         {% if l.level_band %}<span class="band band-{{ l.level_band }}">{{ l.level_band|replace('-', ' ') }}</span>{% endif %}

@@ -103,6 +103,10 @@ def load_disciplines() -> dict[str, Any]:
     return _load_yaml("disciplines.yaml")
 
 
+def load_skills() -> dict[str, Any]:
+    return _load_yaml("skills.yaml")
+
+
 # Canonical university-group display metadata for the UI presets.
 UNIVERSITY_GROUPS = {
     "go8": "Group of Eight",

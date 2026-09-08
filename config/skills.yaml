@@ -1,0 +1,103 @@
+# =============================================================================
+# Skills taxonomy — the reviewable dictionary behind the "skills map".
+#
+# app/normalise/skills.py scans each listing's text (title + excerpt now; richer
+# requirements text later if a detail-fetch pass is added) for these terms and
+# tags the listing with the CANONICAL skill name. Only the tags are stored, never
+# the source text (keeps us within CRAWLING.md conduct + copyright).
+#
+# Structure:
+#   <Category>:
+#     <Canonical skill>: [alias, alias, ...]   # aliases matched case-insensitively,
+#                                              # whole-word/phrase. Canonical name is
+#                                              # always matched too.
+# Extend freely — this is data, not code.
+# =============================================================================
+
+Research & analysis:
+  Research methods: ["research methods", "research design", "experimental design"]
+  Data analysis: ["data analysis", "data analytics", "analysing data"]
+  Statistics: ["statistics", "statistical analysis", "biostatistics", "statistical"]
+  Qualitative research: ["qualitative", "qualitative research"]
+  Quantitative research: ["quantitative", "quantitative research"]
+  Grant writing: ["grant writing", "grants", "grant applications", "funding applications"]
+  Publications: ["publications", "peer-reviewed", "publishing", "journal articles"]
+  Literature review: ["literature review", "systematic review"]
+
+Data & software:
+  Python: ["python"]
+  R: ["r programming", "rstats"]
+  SQL: ["sql", "postgres", "mysql"]
+  MATLAB: ["matlab"]
+  Machine learning: ["machine learning", "deep learning", "ml"]
+  Artificial intelligence: ["artificial intelligence", "\\bai\\b"]
+  Data science: ["data science", "data scientist"]
+  SPSS: ["spss"]
+  NVivo: ["nvivo"]
+  Stata: ["stata"]
+  Tableau: ["tableau"]
+  Power BI: ["power bi", "powerbi"]
+  Excel: ["excel", "spreadsheets"]
+  Programming: ["programming", "software development", "coding", "developer"]
+  Cloud: ["cloud", "aws", "azure", "gcp"]
+  GIS: ["gis", "geospatial", "arcgis"]
+
+Teaching & education:
+  Teaching: ["teaching", "lecturing", "tutoring", "deliver lectures"]
+  Curriculum development: ["curriculum development", "curriculum design", "course design", "course development"]
+  Assessment: ["assessment", "marking", "grading"]
+  Online learning: ["online learning", "blended learning", "e-learning", "learning management", "canvas", "moodle"]
+  Pedagogy: ["pedagogy", "pedagogical"]
+  Student supervision: ["student supervision", "supervising students", "hdr supervision", "phd supervision"]
+
+Clinical & health:
+  Clinical practice: ["clinical", "clinical practice", "patient care"]
+  Nursing: ["nursing", "registered nurse"]
+  AHPRA registration: ["ahpra", "registration with ahpra"]
+  Mental health: ["mental health", "counselling", "psychology practice"]
+  First aid: ["first aid", "cpr"]
+
+Laboratory & technical:
+  Laboratory skills: ["laboratory", "lab-based", "wet lab", "lab techniques"]
+  Microscopy: ["microscopy", "imaging"]
+  Sample preparation: ["sample preparation", "sample prep"]
+  Instrumentation: ["instrumentation", "instruments", "calibration"]
+
+Project & people management:
+  Project management: ["project management", "project manager", "project delivery"]
+  Stakeholder engagement: ["stakeholder engagement", "stakeholder management", "stakeholders"]
+  Leadership: ["leadership", "team leadership", "leading teams"]
+  Team management: ["team management", "managing a team", "line management", "supervision of staff"]
+  Budget management: ["budget", "budgeting", "financial management"]
+  Agile: ["agile", "scrum", "kanban"]
+  Change management: ["change management"]
+
+Communication:
+  Written communication: ["written communication", "report writing", "writing skills", "report-writing"]
+  Presentation: ["presentation", "presenting", "public speaking"]
+  Interpersonal: ["interpersonal", "interpersonal skills"]
+  Negotiation: ["negotiation", "negotiating"]
+
+Administration & finance:
+  Administration: ["administration", "administrative", "office management"]
+  Finance: ["finance", "financial", "accounting", "accounts"]
+  Procurement: ["procurement", "purchasing", "contracts"]
+  Records management: ["records management", "recordkeeping", "data entry"]
+  Scheduling: ["scheduling", "diary management", "calendar management"]
+
+Marketing & digital:
+  Marketing: ["marketing", "campaigns"]
+  Social media: ["social media"]
+  SEO: ["seo", "search engine optimisation"]
+  Content creation: ["content creation", "content development", "copywriting"]
+  CRM: ["crm", "salesforce"]
+  Digital marketing: ["digital marketing", "edm", "email marketing"]
+
+Compliance & governance:
+  Compliance: ["compliance", "regulatory"]
+  Governance: ["governance"]
+  Risk management: ["risk management", "risk assessment"]
+  Policy: ["policy development", "policy", "policies and procedures"]
+  WHS: ["whs", "work health and safety", "ohs", "workplace health"]
+  Ethics: ["ethics", "research ethics", "ethics approval"]
+  Privacy: ["privacy", "data protection", "confidentiality"]

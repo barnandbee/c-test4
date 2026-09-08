@@ -17,6 +17,7 @@ from app.normalise.classify import (
     parse_work_type,
 )
 from app.normalise.levels import classify_level
+from app.normalise.skills import extract_skills
 
 
 @dataclasses.dataclass
@@ -96,4 +97,6 @@ def normalise_record(raw: RawJob, university: dict[str, Any]) -> dict[str, Any]:
         "discipline": discipline,
         "remote_flag": bool(remote),
         "excerpt": _clean_excerpt(raw.excerpt),
+        # Skill tags derived from title + excerpt (only tags stored, not the text).
+        "skills": extract_skills(raw.title, raw.classification_raw, raw.excerpt),
     }

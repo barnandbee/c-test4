@@ -84,7 +84,30 @@
   </div>
   {% endif %}
 
+  {% if data.skills_map %}
+  <div class="an-card an-skills-card">
+    <h3>Skills map — extracted from live roles</h3>
+    <div class="skills-map">
+      {% for category, items in data.skills_map.items() %}
+      <div class="skills-cat">
+        <h4>{{ category }}</h4>
+        <div class="skills-tags">
+          {% for skill, count in items %}
+          <a class="skill-tag" href="/?skill={{ skill|urlencode }}" title="{{ count }} live role{{ 's' if count != 1 }}">
+            {{ skill }} <span class="skill-count">{{ count }}</span>
+          </a>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <p class="hint">Tags are derived from role titles &amp; excerpts against a reviewable
+      taxonomy (<code>config/skills.yaml</code>). Click a skill to see those roles.</p>
+  </div>
+  {% endif %}
+
   <div class="an-grid">
+    {{ bars("Top skills in demand", data.top_skills) }}
     {{ bars("By role family", data.by_role_family) }}
     {{ bars("By level band", data.by_level_band) }}
     {{ bars("By state / territory", data.by_state) }}
