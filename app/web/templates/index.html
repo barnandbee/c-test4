@@ -165,6 +165,23 @@
     <div class="filters-foot">
       <button type="submit" class="btn-primary">Apply filters</button>
     </div>
+
+    {% if sponsors %}
+    <aside class="sponsor-slot" aria-label="Supporters">
+      <div class="sponsor-label">Supported by</div>
+      {% for sp in sponsors %}
+        {% if sp.embed_html %}
+          <div class="sponsor-embed">{{ sp.embed_html|safe }}</div>
+        {% else %}
+        <a class="sponsor-card" {% if sp.url %}href="{{ sp.url }}" target="_blank" rel="noopener noreferrer sponsored"{% endif %}>
+          {% if sp.logo_url %}<img src="{{ sp.logo_url }}" alt="{{ sp.name }}" loading="lazy">{% else %}<span class="sponsor-name">{{ sp.name }}</span>{% endif %}
+          {% if sp.blurb %}<span class="sponsor-blurb">{{ sp.blurb }}</span>{% endif %}
+        </a>
+        {% endif %}
+      {% endfor %}
+      <p class="sponsor-note">Independent &amp; unaffiliated with any university.</p>
+    </aside>
+    {% endif %}
   </aside>
 
   <section class="results-col">

@@ -76,9 +76,19 @@ def salary_range(l) -> str:
     return money(l.salary_min)
 
 
+def dtlocal(value: dt.datetime | None) -> str:
+    return _ensure_aware(value).strftime("%Y-%m-%dT%H:%M") if value else ""
+
+
+def eventdate(value: dt.datetime | None) -> str:
+    return _ensure_aware(value).strftime("%a %-d %b %Y, %-I:%M%p") if value else "Date TBC"
+
+
 _TEMPLATES.env.filters["ago"] = ago
 _TEMPLATES.env.filters["until"] = until
 _TEMPLATES.env.filters["money"] = money
+_TEMPLATES.env.filters["dtlocal"] = dtlocal
+_TEMPLATES.env.filters["eventdate"] = eventdate
 _TEMPLATES.env.globals["salary_range"] = salary_range
 
 WORK_TYPES = ["continuing", "fixed-term", "casual", "contract"]
@@ -127,12 +137,20 @@ def filters_from_request(request: Request) -> Filters:
     )
 
 
+def _load_sponsors(session: Session, limit: int = 2) -> list:
+    from app.models import Sponsor
+    return list(session.scalars(
+        select(Sponsor).where(Sponsor.active.is_(True))
+        .order_by(Sponsor.position, Sponsor.id).limit(limit)))
+
+
 def _template_context(request: Request, session: Session) -> dict:
     fv = facet_values(session)
     universities = load_universities()
     return {
         "request": request,
         "is_admin": is_admin(request),
+        "sponsors": _load_sponsors(session),
         "universities": sorted(universities, key=lambda u: u["name"]),
         "groups": UNIVERSITY_GROUPS,
         "states": STATES,
@@ -530,6 +548,127 @@ def admin_blog_delete(pid: int = Form(...), session: Session = Depends(get_sessi
 def admin_blog_stats(session: Session = Depends(get_session)):
     from app.blog import build_stats_markdown
     return Response(build_stats_markdown(session), media_type="text/plain")
+
+
+# --- events / webinars -------------------------------------------------------
+def _parse_dt(value: str) -> dt.datetime | None:
+    value = (value or "").strip()
+    for fmt in ("%Y-%m-%dT%H:%M", "%Y-%m-%d %H:%M", "%Y-%m-%d"):
+        try:
+            return dt.datetime.strptime(value, fmt).replace(tzinfo=dt.timezone.utc)
+        except ValueError:
+            continue
+    return None
+
+
+@router.get("/events", response_class=HTMLResponse)
+def events_index(request: Request, session: Session = Depends(get_session)):
+    from app.models import Event
+    now = utcnow()
+    pub = select(Event).where(Event.status == "published")
+    upcoming = list(session.scalars(
+        pub.where(Event.starts_at.is_(None) | (Event.starts_at >= now)).order_by(Event.starts_at)))
+    past = list(session.scalars(
+        pub.where(Event.starts_at.is_not(None), Event.starts_at < now).order_by(desc(Event.starts_at))))
+    return _TEMPLATES.TemplateResponse(request, "events_list.html", {
+        "request": request, "is_admin": is_admin(request), "upcoming": upcoming, "past": past})
+
+
+@router.get("/admin/events", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+def admin_events(request: Request, session: Session = Depends(get_session)):
+    from app.models import Event
+    events = list(session.scalars(select(Event).order_by(desc(Event.starts_at))))
+    return _TEMPLATES.TemplateResponse(request, "events_admin.html", {
+        "request": request, "is_admin": True, "events": events,
+        "flash": request.query_params.get("flash")})
+
+
+@router.get("/admin/events/new", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+def admin_events_new(request: Request):
+    return _TEMPLATES.TemplateResponse(request, "events_edit.html",
+                                       {"request": request, "is_admin": True, "event": None})
+
+
+@router.get("/admin/events/{eid}/edit", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+def admin_events_edit(eid: int, request: Request, session: Session = Depends(get_session)):
+    from app.models import Event
+    event = session.get(Event, eid)
+    if not event:
+        return RedirectResponse("/admin/events", status_code=303)
+    return _TEMPLATES.TemplateResponse(request, "events_edit.html",
+                                       {"request": request, "is_admin": True, "event": event})
+
+
+@router.post("/admin/events/save", dependencies=[Depends(require_admin)])
+def admin_events_save(eid: str = Form(""), title: str = Form(...), description: str = Form(""),
+                      starts_at: str = Form(""), format: str = Form(""),
+                      registration_url: str = Form(""), action: str = Form("save"),
+                      session: Session = Depends(get_session)):
+    from app.models import Event
+    ev = session.get(Event, int(eid)) if eid else None
+    if ev is None:
+        ev = Event()
+        session.add(ev)
+    ev.title = title.strip()
+    ev.description = description.strip() or None
+    ev.starts_at = _parse_dt(starts_at)
+    ev.format = format.strip() or None
+    ev.registration_url = registration_url.strip() or None
+    if action in ("publish", "unpublish"):
+        ev.status = "published" if action == "publish" else "draft"
+    session.commit()
+    return RedirectResponse(f"/admin/events/{ev.id}/edit?flash={action}", status_code=303)
+
+
+@router.post("/admin/events/delete", dependencies=[Depends(require_admin)])
+def admin_events_delete(eid: int = Form(...), session: Session = Depends(get_session)):
+    from app.models import Event
+    ev = session.get(Event, eid)
+    if ev:
+        session.delete(ev)
+        session.commit()
+    return RedirectResponse("/admin/events?flash=deleted", status_code=303)
+
+
+# --- sponsors ----------------------------------------------------------------
+@router.get("/admin/sponsors", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+def admin_sponsors(request: Request, session: Session = Depends(get_session)):
+    from app.models import Sponsor
+    sponsors = list(session.scalars(select(Sponsor).order_by(Sponsor.position, Sponsor.id)))
+    return _TEMPLATES.TemplateResponse(request, "sponsors_admin.html", {
+        "request": request, "is_admin": True, "sponsors": sponsors,
+        "flash": request.query_params.get("flash")})
+
+
+@router.post("/admin/sponsors/save", dependencies=[Depends(require_admin)])
+def admin_sponsors_save(sid: str = Form(""), name: str = Form(...), url: str = Form(""),
+                        logo_url: str = Form(""), blurb: str = Form(""), embed_html: str = Form(""),
+                        position: int = Form(1), active: str = Form(""),
+                        session: Session = Depends(get_session)):
+    from app.models import Sponsor
+    sp = session.get(Sponsor, int(sid)) if sid else None
+    if sp is None:
+        sp = Sponsor()
+        session.add(sp)
+    sp.name = name.strip()
+    sp.url = url.strip() or None
+    sp.logo_url = logo_url.strip() or None
+    sp.blurb = blurb.strip() or None
+    sp.embed_html = embed_html.strip() or None
+    sp.position = position
+    sp.active = active == "1"
+    session.commit()
+    return RedirectResponse("/admin/sponsors?flash=saved", status_code=303)
+
+
+@router.post("/admin/sponsors/delete", dependencies=[Depends(require_admin)])
+def admin_sponsors_delete(sid: int = Form(...), session: Session = Depends(get_session)):
+    from app.models import Sponsor
+    sp = session.get(Sponsor, sid)
+    if sp:
+        session.delete(sp)
+        session.commit()
+    return RedirectResponse("/admin/sponsors?flash=deleted", status_code=303)
 
 
 def _iso(value: dt.datetime | None) -> str | None:
