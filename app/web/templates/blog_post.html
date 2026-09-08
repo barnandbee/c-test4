@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}{{ post.title }} — AU Uni Jobs{% endblock %}
+{% block content %}
+<article class="post-wrap">
+  <p class="post-back"><a href="/blog">← All posts</a></p>
+  {% if post.status != 'published' %}<p class="banner">Draft preview — not publicly visible.</p>{% endif %}
+  <h1 class="post-title">{{ post.title }}</h1>
+  {% if post.subtitle %}<p class="post-dek">{{ post.subtitle }}</p>{% endif %}
+  <p class="post-meta">
+    {% if post.published_at %}{{ post.published_at.strftime('%-d %B %Y') }}{% endif %}
+    {% if post.author %} · by {{ post.author }}{% endif %}
+    {% if is_admin %} · <a href="/admin/blog/{{ post.id }}/edit">edit</a>{% endif %}
+  </p>
+  <div class="post-body">{{ post.body_html|safe }}</div>
+</article>
+{% endblock %}

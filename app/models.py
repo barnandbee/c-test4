@@ -213,6 +213,25 @@ class FeaturedJob(Base):
     created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
 
 
+class BlogPost(Base):
+    """A blog / newsletter post (admin-authored). Body stored as Markdown source
+    plus rendered HTML."""
+
+    __tablename__ = "blog_posts"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    slug: Mapped[str] = mapped_column(String(200), unique=True, index=True)
+    title: Mapped[str] = mapped_column(String(300))
+    subtitle: Mapped[str | None] = mapped_column(Text)         # dek / excerpt
+    body_md: Mapped[str] = mapped_column(Text, default="")
+    body_html: Mapped[str] = mapped_column(Text, default="")
+    author: Mapped[str | None] = mapped_column(String(120))
+    status: Mapped[str] = mapped_column(String(16), default="draft", index=True)  # draft/published
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+    updated_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow, onupdate=utcnow)
+    published_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class HttpCache(Base):
     """Conditional-request cache: ETag / Last-Modified per URL (see CRAWLING.md)."""
 

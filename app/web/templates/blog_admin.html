@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Blog admin{% endblock %}
+{% block content %}
+<div class="admin">
+  <h1>Blog posts</h1>
+  <p class="admin-summary">
+    <a href="/admin/blog/new" class="btn-primary" style="width:auto;padding:8px 16px;display:inline-block">+ New post</a>
+    · <a href="/blog">View blog →</a>
+  </p>
+  {% if flash == 'deleted' %}<p class="banner">Post deleted.</p>{% endif %}
+
+  {% if posts %}
+  <table class="health">
+    <thead><tr><th>Title</th><th>Status</th><th>Updated</th><th></th></tr></thead>
+    <tbody>
+      {% for p in posts %}
+      <tr>
+        <td><a href="/admin/blog/{{ p.id }}/edit">{{ p.title }}</a></td>
+        <td><span class="status status-{{ 'ok' if p.status == 'published' else 'never' }}">{{ p.status }}</span></td>
+        <td>{{ p.updated_at|ago }}</td>
+        <td>
+          <form method="post" action="/admin/blog/delete" onsubmit="return confirm('Delete this post?')" style="display:inline">
+            <input type="hidden" name="pid" value="{{ p.id }}">
+            <button type="submit" class="btn-ghost" style="padding:6px 12px">Delete</button>
+          </form>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="hint">No posts yet. Create your first one.</p>
+  {% endif %}
+</div>
+{% endblock %}
