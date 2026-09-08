@@ -52,9 +52,9 @@ universities:
     adapter: pageup
     careers_url: https://www.canberra.edu.au/about-uc/careers-at-uc
     params:
-      listing_url: https://jobs.canberra.edu.au/cw/en/listing/
-    confidence: medium
-    notes: Careers landing redirects to a PageUp instance; confirm vanity host.
+      listing_url: https://careers.pageuppeople.com/737/cw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp client 737 (careers.pageuppeople.com/737/cw/).
 
   # ------------------------------- NSW -------------------------------
   - slug: acu
@@ -118,12 +118,14 @@ universities:
     name: Macquarie University
     state: NSW
     groups: []
-    adapter: pageup
+    adapter: workday
     careers_url: https://jobs.mq.edu.au/
     params:
-      listing_url: https://jobs.mq.edu.au/cw/en/listing/
+      tenant: mq
+      dc: wd3
+      site: CareersatMQ
     confidence: high
-    notes: Confirmed PageUp (jobs.mq.edu.au).
+    notes: Confirmed Workday (mq.wd3.myworkdayjobs.com/CareersatMQ); migrated from PageUp.
 
   - slug: scu
     name: Southern Cross University
@@ -162,11 +164,15 @@ universities:
     name: University of Newcastle
     state: NSW
     groups: [atn]
-    adapter: pageup
-    careers_url: https://www.newcastle.edu.au/about-uon/careers
+    adapter: html_generic
+    careers_url: https://www.newcastle.edu.au/our-uni/jobs/job-vacancies
     params:
-      listing_url: https://careers.newcastle.edu.au/cw/en/listing/
-    confidence: medium
+      listing_url: https://www.newcastle.edu.au/our-uni/jobs/job-vacancies
+    confidence: low
+    notes: >
+      KNOWN GAP — Newcastle uses LiveHire (livehire.com/careers/universityofnewcastle),
+      a JS SPA we don't yet have an adapter for. Needs a LiveHire adapter (its public
+      API) to ingest; html_generic won't parse the SPA.
 
   - slug: sydney
     name: University of Sydney
@@ -283,9 +289,9 @@ universities:
     adapter: nganet
     careers_url: https://www.qut.edu.au/about/working-at-qut
     params:
-      listing_url: https://qut.nga.net.au/cp/
+      listing_url: https://qut.nga.net.au/cp/index.cfm?event=jobs.listJobs&jobListid=22fc4f47-e994-46a3-b8c9-9bc901269f43
     confidence: medium
-    notes: QUT uses NGA.NET (qut.nga.net.au). Auto-discovery confirms the host from the careers page.
+    notes: Confirmed NGA.NET (qut.nga.net.au); listing_url is the 'All jobs' list.
 
   - slug: uq
     name: University of Queensland
@@ -318,8 +324,9 @@ universities:
     adapter: pageup
     careers_url: https://www.usc.edu.au/about/work-at-unisc
     params:
-      listing_url: https://jobs.usc.edu.au/cw/en/listing/
-    confidence: medium
+      listing_url: https://careers.pageuppeople.com/1167/cw/en/listing/
+    confidence: high
+    notes: Confirmed PageUp client 1167 (UniSC).
 
   # ------------------------------- SA --------------------------------
   - slug: adelaide
@@ -383,9 +390,9 @@ universities:
     adapter: pageup
     careers_url: https://www.deakin.edu.au/about-deakin/careers-at-deakin
     params:
-      listing_url: https://careers.deakin.edu.au/en/listing/
+      listing_url: https://careers.pageuppeople.com/949/cw/en/listing/
     confidence: high
-    notes: Confirmed PageUp vanity (careers.deakin.edu.au/en/listing/ — no /cw/ segment).
+    notes: Confirmed PageUp client 949 (Deakin).
 
   - slug: federation
     name: Federation University Australia
@@ -416,10 +423,8 @@ universities:
     careers_url: https://www.monash.edu/jobs/jobs-at-monash
     params:
       listing_url: https://careers.pageuppeople.com/513/cw/en/listing/
-    confidence: low
-    notes: >
-      Historically PageUp client 513. A 2018 breach led Monash to disable PageUp;
-      current platform must be re-verified — may now be Workday. Marked low.
+    confidence: high
+    notes: Confirmed PageUp client 513 (Monash).
 
   - slug: rmit
     name: RMIT University
@@ -488,25 +493,25 @@ universities:
     name: Curtin University
     state: WA
     groups: [atn]
-    adapter: pageup
-    careers_url: https://staff.curtin.edu.au/job-vacancies/
+    adapter: html_generic
+    careers_url: https://curtincareers.applynow.net.au/
     params:
-      listing_url: https://careers.curtin.edu.au/cw/en/listing/
-    confidence: medium
+      listing_url: https://curtincareers.applynow.net.au/
+    confidence: low
+    notes: >
+      KNOWN GAP — Curtin uses ApplyNow (curtincareers.applynow.net.au / Recruitment
+      Systems), a platform we don't yet have an adapter for. Needs an ApplyNow adapter.
 
   - slug: ecu
     name: Edith Cowan University
     state: WA
     groups: []
-    adapter: pageup
+    adapter: nganet
     careers_url: https://www.ecu.edu.au/employment-opportunities
     params:
-      # jobs.ecu.edu.au did not resolve and the PageUp client id is unconfirmed.
-      # Pointed at the careers page so it fails safe (0 jobs) rather than risk
-      # scraping another org's PageUp. Fix the client id via /admin/probe.
-      listing_url: https://www.ecu.edu.au/employment-opportunities
-    confidence: low
-    notes: KNOWN GAP — needs real PageUp client id (careers.pageuppeople.com/<id>/cw/) confirmed via probe.
+      listing_url: https://ecu.nga.net.au/cp/index.cfm?event=jobs.listJobs&CurATC=EXT
+    confidence: medium
+    notes: Confirmed NGA.NET (ecu.nga.net.au). Not PageUp.
 
   - slug: murdoch
     name: Murdoch University
