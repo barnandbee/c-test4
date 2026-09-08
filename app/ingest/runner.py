@@ -52,8 +52,24 @@ _UPSERT_COLUMNS = (
 )
 
 
+# Idempotent, additive DDL for columns/indexes added to *existing* tables after
+# first deploy. create_all() only creates missing tables, never alters columns, so
+# new columns on an existing table must be added here. Postgres IF NOT EXISTS makes
+# each statement a safe no-op once applied. Append new migrations; never edit past
+# ones. (A dedicated migration tool like Alembic would be the next step at scale.)
+_LIGHT_MIGRATIONS = (
+    "ALTER TABLE listings ADD COLUMN IF NOT EXISTS pay_grade VARCHAR(32)",
+    "ALTER TABLE staging_listings ADD COLUMN IF NOT EXISTS pay_grade VARCHAR(32)",
+    "CREATE INDEX IF NOT EXISTS ix_listings_pay_grade ON listings (pay_grade)",
+)
+
+
 def init_db() -> None:
+    from sqlalchemy import text
     Base.metadata.create_all(engine)
+    with engine.begin() as conn:
+        for ddl in _LIGHT_MIGRATIONS:
+            conn.execute(text(ddl))
 
 
 # --- HTTP cache <-> DB -------------------------------------------------------
