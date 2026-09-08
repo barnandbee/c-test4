@@ -20,6 +20,19 @@ patterns · **Live-verified:** ❌ no (see caveat)
 > their own adapters (documented gaps): **Newcastle → LiveHire**,
 > **Curtin → ApplyNow**. Still to confirm: Swinburne, Victoria U, Federation,
 > Southern Cross, UNE, UniSQ, Notre Dame, Bond, ACU, JCU, CDU, Murdoch, WSU.
+>
+> **Coverage push (batch 2):** confirmed via targeted search on ATS domains and
+> applied only concretely-seen endpoints — **Swinburne → NGA.NET**
+> (`swinjobs.nga.net.au`), **Southern Cross → NGA.NET** (`scu.nga.net.au`),
+> **UniSQ → NGA.NET** (`usq.nga.net.au`), **Western Sydney → NGA.NET**
+> (`uws.nga.net.au`, now high-confidence) — these four were previously mis-set to
+> PageUp/low. **Victoria U → PageUp client 776**, **Federation → PageUp client 428**
+> (`/caw/`). **ACU → Workday** (`acu.wd108/ACUCareers`; legacy PageUp apply/456 still
+> exists), **Murdoch → Workday** (`murdoch.wd3/MurdochCareers`). NGA.NET is far more
+> common in the sector than the original table assumed. **Still unconfirmed**
+> (no concrete ATS endpoint surfaced — left as documented guesses, not invented):
+> CDU, UNE, JCU (only JCU *Singapore*/PageUp 931 found — a separate entity), UTS
+> (only UTS *College*/PageUp 1182 found — separate entity), Bond, Notre Dame.
 
 ## ⚠️ Read this first
 
