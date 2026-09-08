@@ -50,7 +50,16 @@ class PoliteClient:
         self._robots: dict[str, urllib.robotparser.RobotFileParser] = {}
         self._cache = cache if cache is not None else {}
         self._client = httpx.Client(
-            headers={"User-Agent": self._settings.user_agent},
+            headers={
+                # Keep the identifying User-Agent (CRAWLING.md), but also send the
+                # Accept / Accept-Language a normal browser sends. Some ATS front
+                # ends (notably NGA.NET's ColdFusion/WAF) answer a bare request
+                # with 405 Method Not Allowed; a well-formed Accept header fixes it
+                # without spoofing our identity.
+                "User-Agent": self._settings.user_agent,
+                "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+                "Accept-Language": "en-AU,en;q=0.9",
+            },
             timeout=self._settings.request_timeout_seconds,
             follow_redirects=True,
         )
