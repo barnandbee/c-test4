@@ -111,18 +111,6 @@
              value="{{ selected.scalar.classification }}" placeholder="e.g. HEW 7, Level B">
     </details>
 
-    {% if facet_values.pay_grades %}
-    <details class="field">
-      <summary>Pay grade (HEW / Academic)</summary>
-      <div class="scroll">
-      {% for pg in facet_values.pay_grades %}
-      <label class="check"><input type="checkbox" name="pay_grade" value="{{ pg }}"
-        {% if pg in selected.pay_grade %}checked{% endif %}> {{ pg }}</label>
-      {% endfor %}
-      </div>
-    </details>
-    {% endif %}
-
     <details class="field">
       <summary>Work type &amp; fraction</summary>
       {% for wt in work_types %}

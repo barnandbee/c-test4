@@ -25,6 +25,7 @@
       </a>
       <p class="brand-tag">Open vacancies across all 42 Australian universities</p>
       <nav class="site-nav">
+        <button type="button" class="nav-btn" onclick="document.getElementById('hew-guide').showModal()">Pay scales guide</button>
         {% if is_admin %}
           <a href="/admin">Source health</a>
           <a href="/admin/analytics">Analytics</a>
@@ -40,6 +41,40 @@
   <main class="wrap">
     {% block content %}{% endblock %}
   </main>
+
+  <dialog id="hew-guide" class="guide">
+    <form method="dialog" class="guide-close-row"><button class="guide-close" aria-label="Close">✕</button></form>
+    <h2>Australian university pay scales</h2>
+    <p>Roles are usually advertised against one of two scales. The exact salary for a
+       level <strong>varies by institution</strong> (each has its own enterprise
+       agreement), so treat these as a guide, not a quote — always check the listing.</p>
+    <div class="guide-grid">
+      <section>
+        <h3>Professional / general staff — HEW</h3>
+        <p class="guide-note">“HEW” = Higher Education Worker (some institutions say HEO/HEP). Levels 1–10.</p>
+        <ul>
+          <li><strong>HEW 1–3</strong> — entry / administrative &amp; support</li>
+          <li><strong>HEW 4–5</strong> — experienced officer, coordinator support</li>
+          <li><strong>HEW 6–7</strong> — officer / coordinator / advisor (degree + experience)</li>
+          <li><strong>HEW 8–9</strong> — senior specialist / manager</li>
+          <li><strong>HEW 10</strong> — senior manager / director (above 10 = executive)</li>
+        </ul>
+      </section>
+      <section>
+        <h3>Academic — Levels A–E</h3>
+        <ul>
+          <li><strong>Level A</strong> — Associate Lecturer / Postdoctoral Fellow</li>
+          <li><strong>Level B</strong> — Lecturer</li>
+          <li><strong>Level C</strong> — Senior Lecturer</li>
+          <li><strong>Level D</strong> — Associate Professor</li>
+          <li><strong>Level E</strong> — Professor</li>
+        </ul>
+      </section>
+    </div>
+    <p class="guide-foot">Tip: the pay level often tells you more about seniority and
+       responsibility than the dollar figure alone — many roles list only the level.</p>
+  </dialog>
+
   {% block scripts %}{% endblock %}
 </body>
 </html>
