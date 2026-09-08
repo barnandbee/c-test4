@@ -11,6 +11,7 @@ from app.ingest.nganet import NgaNetAdapter
 from app.ingest.oracle import OracleAdapter
 from app.ingest.pageup import PageUpAdapter
 from app.ingest.smartrecruiters import SmartRecruitersAdapter
+from app.ingest.successfactors import SuccessFactorsAdapter
 from app.ingest.workday import WorkdayAdapter
 from app.normalise.core import normalise_record
 
@@ -191,6 +192,48 @@ class TestWorkday:
         assert recs["Associate Professor, Data Science"]["level_band"] == "leadership"
         assert recs["Research Assistant, Immunology"]["role_family"] == "research"
         assert recs["Manager, Financial Operations"]["level_band"] == "senior"  # HEW 9 in bullets
+
+    def test_myworkdaysite_host_shape(self):
+        # Newer Workday host: {dc}.myworkdaysite.com/recruiting/{tenant}/{site}
+        fed = {"slug": "federation", "name": "Federation", "state": "VIC",
+               "params": {"site_url": "https://wd105.myworkdaysite.com/recruiting/federation/Federation_Careers"}}
+        adapter = WorkdayAdapter()
+        assert adapter._jobs_url(fed) == (
+            "https://wd105.myworkdaysite.com/wday/cxs/federation/Federation_Careers/jobs")
+        jobs = adapter.parse(load_fixture("workday_jobs.json"), fed, "x")
+        assert jobs[0].url.startswith(
+            "https://wd105.myworkdaysite.com/en-US/recruiting/federation/Federation_Careers/job/")
+
+
+class TestSuccessFactors:
+    CQU = {"slug": "cqu", "name": "CQUniversity", "state": "QLD",
+           "params": {"listing_url": "https://careers.cqu.edu.au/search/?locale=en_GB"}}
+
+    def test_parse(self):
+        jobs = SuccessFactorsAdapter().parse(load_fixture("successfactors_search.html"), self.CQU,
+                                             "https://careers.cqu.edu.au/search/")
+        assert len(jobs) == 2
+        first = jobs[0]
+        assert first.source_job_id == "1366796966"
+        assert first.title == "Senior Lecturer, First Nations Curriculum"
+        assert first.url == ("https://careers.cqu.edu.au/job/"
+                             "Rockhampton-Senior-Lecturer-First-Nations-Curriculum-QLD/1366796966/")
+        assert first.location == "Rockhampton, QLD"
+
+    def test_paginates_with_startrow(self):
+        base = "https://careers.cqu.edu.au/search/?locale=en_GB"
+
+        def page(ids):
+            rows = "".join(f'<li><a href="/job/role-{i}-qld/{i}/">Role {i}</a></li>' for i in ids)
+            return f"<html><body><ul>{rows}</ul></body></html>".encode()
+
+        client = FakeClient({
+            base + "&startrow=0": page([101, 102]),
+            base + "&startrow=25": page([103]),
+            base + "&startrow=50": page([]),
+        })
+        jobs = SuccessFactorsAdapter().fetch(client, self.CQU)
+        assert sorted(j.source_job_id for j in jobs) == ["101", "102", "103"]
 
 
 class TestNgaNet:

@@ -203,13 +203,15 @@ universities:
     state: NSW
     groups: [atn]
     adapter: pageup
-    careers_url: https://www.uts.edu.au/about/careers-uts
+    careers_url: https://recruitment.uts.edu.au/
     params:
       listing_url: https://careers.uts.edu.au/cw/en/listing/
     confidence: low
     notes: >
-      Platform not confirmed by research. PageUp assumed. Verify on first run —
-      may be Workday or bespoke.
+      DOCUMENTED GAP — uses Oracle iRecruitment / E-Business Suite
+      (recruitment.uts.edu.au/OA_HTML/OA.jsp), whose job URLs carry ephemeral
+      session/transaction tokens and expose no clean list endpoint to crawl
+      politely. No adapter yet.
 
   - slug: uow
     name: University of Wollongong
@@ -246,7 +248,12 @@ universities:
     careers_url: https://www.cdu.edu.au/careers-cdu
     params:
       listing_url: https://jobs.cdu.edu.au/cw/en/listing/
-    confidence: medium
+    confidence: low
+    notes: >
+      DOCUMENTED GAP — migrated to TechnologyOne CiAnywhere (cdu.t1cloud.com),
+      which serves session-tokened URLs with no stable job list endpoint we can
+      crawl politely. No adapter yet; left on the (now-dead) PageUp config so it
+      fails cleanly rather than pointing at ephemeral token URLs.
 
   # ------------------------------- QLD -------------------------------
   - slug: bond
@@ -264,12 +271,14 @@ universities:
     name: CQUniversity
     state: QLD
     groups: [run]
-    adapter: pageup
-    careers_url: https://jobs.cqu.edu.au/
+    adapter: successfactors
+    careers_url: https://careers.cqu.edu.au/
     params:
-      listing_url: https://jobs.cqu.edu.au/cw/en/listing/
+      listing_url: https://careers.cqu.edu.au/search/?locale=en_GB
     confidence: high
-    notes: Confirmed PageUp vanity (jobs.cqu.edu.au).
+    notes: >
+      Migrated to SAP SuccessFactors (careers.cqu.edu.au/search/). Job links are
+      /job/<slug>/<reqId>/. Live-verified via user browser navigation.
 
   - slug: griffith
     name: Griffith University
@@ -409,12 +418,15 @@ universities:
     name: Federation University Australia
     state: VIC
     groups: [run]
-    adapter: pageup
+    adapter: workday
     careers_url: https://federation.edu.au/careers
     params:
-      listing_url: https://careers.pageuppeople.com/428/caw/en/listing/
+      site_url: https://wd105.myworkdaysite.com/recruiting/federation/Federation_Careers
     confidence: high
-    notes: Confirmed PageUp client 428 (careers.pageuppeople.com/428/caw/ — note /caw/ path).
+    notes: >
+      Migrated to Workday on the newer myworkdaysite.com host
+      (wd105.myworkdaysite.com/recruiting/federation/Federation_Careers).
+      Live-verified via user browser navigation.
 
   - slug: latrobe
     name: La Trobe University
@@ -495,12 +507,16 @@ universities:
     name: Victoria University
     state: VIC
     groups: []
-    adapter: pageup
+    adapter: oracle
     careers_url: https://www.vu.edu.au/about-vu/careers-at-vu
     params:
-      listing_url: https://careers.pageuppeople.com/776/cw/en/listing/
+      host: fa-ercy-saasfaprod1.fa.ocs.oraclecloud.com
+      site: CX_2001
     confidence: high
-    notes: Confirmed PageUp client 776 (apply host secure.dc2.pageuppeople.com/apply/776).
+    notes: >
+      Migrated to Oracle Recruiting Cloud
+      (fa-ercy-saasfaprod1.fa.ocs.oraclecloud.com, siteNumber CX_2001).
+      Live-verified via user browser navigation.
 
   # ------------------------------- WA --------------------------------
   - slug: curtin

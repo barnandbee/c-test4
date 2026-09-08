@@ -14,6 +14,7 @@ from __future__ import annotations
 import datetime as dt
 import json
 import re
+import urllib.parse
 
 from app.ingest.base import Adapter, NotModified, PoliteClient
 from app.normalise.core import RawJob
@@ -25,13 +26,36 @@ _MAX_PAGES = 50  # 1000 jobs cap — no AU uni posts more; guards against runawa
 class WorkdayAdapter(Adapter):
     name = "workday"
 
-    def _base(self, university: dict) -> str:
+    def _parts(self, university: dict) -> tuple[str, str]:
+        """Return (cxs_jobs_url, job_url_prefix) supporting both Workday host
+        shapes:
+          * classic:  {tenant}.{dc}.myworkdayjobs.com/{site}
+          * newer:    {dc}.myworkdaysite.com/recruiting/{tenant}/{site}
+        Set via tenant/dc/site params, or a single `site_url` (the careers URL).
+        """
         p = university["params"]
-        return f"https://{p['tenant']}.{p['dc']}.myworkdayjobs.com"
+        site_url = p.get("site_url")
+        if site_url:
+            parts = urllib.parse.urlsplit(site_url)
+            host = parts.netloc
+            segs = [s for s in parts.path.split("/") if s and s != "en-US"]
+            if "recruiting" in segs:  # myworkdaysite.com/recruiting/<tenant>/<site>
+                i = segs.index("recruiting")
+                tenant, site = segs[i + 1], segs[i + 2]
+                job_prefix = f"https://{host}/en-US/recruiting/{tenant}/{site}"
+            else:                      # <tenant>.<dc>.myworkdayjobs.com/<site>
+                site = segs[-1] if segs else p.get("site", "")
+                tenant = p.get("tenant") or host.split(".")[0]
+                job_prefix = f"https://{host}/en-US/{site}"
+        else:
+            host = f"{p['tenant']}.{p['dc']}.myworkdayjobs.com"
+            tenant, site = p["tenant"], p["site"]
+            job_prefix = f"https://{host}/en-US/{site}"
+        cxs = f"https://{host}/wday/cxs/{tenant}/{site}/jobs"
+        return cxs, job_prefix
 
     def _jobs_url(self, university: dict) -> str:
-        p = university["params"]
-        return f"{self._base(university)}/wday/cxs/{p['tenant']}/{p['site']}/jobs"
+        return self._parts(university)[0]
 
     def endpoints(self, university: dict) -> list[dict]:
         # Single logical endpoint; pagination handled in fetch().
@@ -67,15 +91,14 @@ class WorkdayAdapter(Adapter):
             self._last_total = 0
             return []
         self._last_total = int(data.get("total", 0))
-        base = self._base(university)
-        site = university["params"]["site"]
+        _, job_prefix = self._parts(university)
         jobs: list[RawJob] = []
         for jp in data.get("jobPostings", []):
             external_path = jp.get("externalPath") or ""
             title = jp.get("title")
             if not title or not external_path:
                 continue
-            url = f"{base}/en-US/{site}{external_path}"
+            url = f"{job_prefix}{external_path}"
             source_id = jp.get("jobRequisitionId") or _last_segment(external_path)
             bullets = jp.get("bulletFields") or []
             jobs.append(
