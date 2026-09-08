@@ -2,7 +2,10 @@
 re-running a live crawl (brief reliability requirement)."""
 from conftest import load_fixture
 
-from app.ingest.base import FetchResult
+import pytest
+
+from app.ingest.base import FetchResult, WafChallenge
+from app.ingest.clinch import ClinchAdapter
 from app.ingest.html_generic import HtmlGenericAdapter
 from app.ingest.nganet import NgaNetAdapter
 from app.ingest.oracle import OracleAdapter
@@ -120,6 +123,51 @@ class TestPageUp:
         import json
         payload = json.dumps({"count": 0, "results": "<p>No matching jobs</p>"}).encode()
         assert PageUpAdapter().parse(payload, UWA, UWA["params"]["listing_url"]) == []
+
+
+class TestClinch:
+    UWA = {"slug": "uwa", "name": "UWA", "state": "WA",
+           "params": {"listing_url": "https://external.jobs.uwa.edu.au/jobs/search"}}
+
+    def test_parse(self):
+        jobs = ClinchAdapter().parse(load_fixture("clinch_listing.html"), self.UWA,
+                                     "https://external.jobs.uwa.edu.au/jobs/search")
+        assert len(jobs) == 3
+        first = jobs[0]
+        assert first.source_job_id == "lecturer-computer-science-crawley-wa-australia"
+        assert first.title == "Lecturer in Computer Science"
+        assert first.url == ("https://external.jobs.uwa.edu.au/jobs/"
+                             "lecturer-computer-science-crawley-wa-australia")
+        assert jobs[2].title == "Casual Project Officer"  # slug with trailing id still parses
+
+    def test_normalises(self):
+        jobs = ClinchAdapter().parse(load_fixture("clinch_listing.html"), self.UWA, "x")
+        recs = {r["title"]: r for r in (normalise_record(j, self.UWA) for j in jobs)}
+        assert recs["Research Fellow, Marine Biology"]["role_family"] == "research"
+
+    def _page(self, slugs):
+        rows = "".join(f'<div><a href="/jobs/{s}">Role {s}</a></div>' for s in slugs)
+        return f"<html><body>{rows}</body></html>".encode()
+
+    def test_paginates_and_dedupes(self):
+        base = "https://external.jobs.uwa.edu.au/jobs/search"
+        client = FakeClient({
+            base + "?page=1": self._page(["role-one-perth-wa-australia", "role-two-perth-wa-australia"]),
+            base + "?page=2": self._page(["role-three-perth-wa-australia"]),
+            base + "?page=3": self._page([]),
+        })
+        jobs = ClinchAdapter().fetch(client, self.UWA)
+        assert sorted(j.source_job_id for j in jobs) == [
+            "role-one-perth-wa-australia", "role-three-perth-wa-australia", "role-two-perth-wa-australia"]
+
+    def test_waf_challenge_is_refused_not_scraped(self):
+        # An AWS WAF challenge page must never be parsed as content.
+        base = "https://external.jobs.uwa.edu.au/jobs/search"
+        waf = (b"<html><head><title>Human Verification</title>"
+               b"<script>window.gokuProps={};</script></head><body></body></html>")
+        client = FakeClient({base + "?page=1": waf})
+        with pytest.raises(WafChallenge):
+            ClinchAdapter().fetch(client, self.UWA)
 
 
 class TestWorkday:
