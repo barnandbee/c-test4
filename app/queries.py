@@ -54,6 +54,7 @@ class Filters:
     cities: list[str] = field(default_factory=list)
     role_families: list[str] = field(default_factory=list)
     level_bands: list[str] = field(default_factory=list)
+    skills: list[str] = field(default_factory=list)
     classification: str | None = None
     work_types: list[str] = field(default_factory=list)
     time_fractions: list[str] = field(default_factory=list)
@@ -91,6 +92,8 @@ def _apply(stmt: Select, f: Filters) -> Select:
         stmt = stmt.where(Listing.role_family.in_(f.role_families))
     if f.level_bands:
         stmt = stmt.where(Listing.level_band.in_(f.level_bands))
+    if f.skills:
+        stmt = stmt.where(Listing.skills.overlap(f.skills))  # any selected skill present
     if f.classification:
         stmt = stmt.where(Listing.classification_raw.ilike(f"%{f.classification}%"))
     if f.work_types:
@@ -235,8 +238,20 @@ def analytics(session: Session, f: Filters) -> dict:
     titles = [t for (t,) in session.execute(select(c.title))]
     wordcloud = title_wordcloud(titles)
 
+    # Skills map: unnest the skill tags across the filtered set and count.
+    from app.normalise.skills import skill_category
+    un = select(func.unnest(c.skills).label("skill")).subquery()
+    skill_rows = [(s, ct) for s, ct in session.execute(
+        select(un.c.skill, func.count()).group_by(un.c.skill).order_by(func.count().desc())).all()]
+    top_skills = {"rows": skill_rows[:20], "max": max((ct for _, ct in skill_rows), default=0)}
+    skills_map: dict[str, list] = {}
+    for skill, ct in skill_rows:
+        skills_map.setdefault(skill_category(skill), []).append((skill, ct))
+
     return {
         "wordcloud": wordcloud,
+        "top_skills": top_skills,
+        "skills_map": skills_map,
         "total": n,
         "summary": {
             "with_salary": with_salary,
@@ -265,10 +280,16 @@ def facet_values(session: Session) -> dict:
         return [v for (v,) in session.execute(
             select(col).where(col.is_not(None), Listing.status == "open").distinct().order_by(col)
         )]
+    un = select(func.unnest(Listing.skills).label("skill")).where(
+        Listing.status == "open").subquery()
+    skills = [s for (s, _c) in session.execute(
+        select(un.c.skill, func.count()).group_by(un.c.skill)
+        .order_by(func.count().desc()).limit(40))]
     return {
         "disciplines": distinct(Listing.discipline),
         "cities": distinct(Listing.campus_location),
         "role_families": distinct(Listing.role_family),
         "level_bands": distinct(Listing.level_band),
         "work_types": distinct(Listing.work_type),
+        "skills": skills,
     }

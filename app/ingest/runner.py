@@ -49,6 +49,7 @@ _UPSERT_COLUMNS = (
     "title", "url", "posted_at", "closes_at", "work_type", "time_fraction",
     "role_family", "classification_raw", "level_band", "level_scale", "pay_grade",
     "salary_min", "salary_max", "salary_raw", "discipline", "remote_flag", "excerpt",
+    "skills",
 )
 
 
@@ -61,6 +62,9 @@ _LIGHT_MIGRATIONS = (
     "ALTER TABLE listings ADD COLUMN IF NOT EXISTS pay_grade VARCHAR(32)",
     "ALTER TABLE staging_listings ADD COLUMN IF NOT EXISTS pay_grade VARCHAR(32)",
     "CREATE INDEX IF NOT EXISTS ix_listings_pay_grade ON listings (pay_grade)",
+    "ALTER TABLE listings ADD COLUMN IF NOT EXISTS skills TEXT[]",
+    "ALTER TABLE staging_listings ADD COLUMN IF NOT EXISTS skills TEXT[]",
+    "CREATE INDEX IF NOT EXISTS ix_listings_skills ON listings USING GIN (skills)",
 )
 
 

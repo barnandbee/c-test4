@@ -140,6 +140,18 @@
         {% if selected.scalar.has_salary %}checked{% endif %}> Only listings with a published salary</label>
     </details>
 
+    {% if facet_values.skills %}
+    <details class="field">
+      <summary>Skills</summary>
+      <div class="scroll">
+      {% for sk in facet_values.skills %}
+      <label class="check"><input type="checkbox" name="skill" value="{{ sk }}"
+        {% if sk in selected.skill %}checked{% endif %}> {{ sk }}</label>
+      {% endfor %}
+      </div>
+    </details>
+    {% endif %}
+
     {% if facet_values.disciplines %}
     <details class="field">
       <summary>Discipline</summary>

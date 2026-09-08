@@ -19,7 +19,7 @@ from sqlalchemy import (
     String,
     Text,
 )
-from sqlalchemy.dialects.postgresql import TSVECTOR
+from sqlalchemy.dialects.postgresql import ARRAY, TSVECTOR
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
 
@@ -76,6 +76,7 @@ class Listing(Base):
     discipline: Mapped[str | None] = mapped_column(String(64), index=True)
     remote_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     excerpt: Mapped[str | None] = mapped_column(Text)
+    skills: Mapped[list[str] | None] = mapped_column(ARRAY(Text))   # canonical skill tags (text[])
 
     first_seen_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
     last_seen_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
@@ -127,6 +128,7 @@ class StagingListing(Base):
     discipline: Mapped[str | None] = mapped_column(String(64))
     remote_flag: Mapped[bool] = mapped_column(Boolean, default=False)
     excerpt: Mapped[str | None] = mapped_column(Text)
+    skills: Mapped[list[str] | None] = mapped_column(ARRAY(Text))
 
 
 class CrawlRun(Base):
