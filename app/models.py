@@ -232,6 +232,38 @@ class BlogPost(Base):
     published_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True))
 
 
+class Event(Base):
+    """A webinar / event (admin-authored), e.g. free coaching sessions."""
+
+    __tablename__ = "events"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    title: Mapped[str] = mapped_column(String(300))
+    description: Mapped[str | None] = mapped_column(Text)
+    starts_at: Mapped[dt.datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+    format: Mapped[str | None] = mapped_column(String(120))       # "Online webinar", "In person — Melbourne"
+    registration_url: Mapped[str | None] = mapped_column(Text)
+    status: Mapped[str] = mapped_column(String(16), default="draft", index=True)  # draft/published
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
+class Sponsor(Base):
+    """A sponsor / supporter shown in an unobtrusive slot. `embed_html` allows an
+    ad-network snippet (e.g. AdSense); otherwise logo + name + blurb + link."""
+
+    __tablename__ = "sponsors"
+
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(200))
+    url: Mapped[str | None] = mapped_column(Text)
+    logo_url: Mapped[str | None] = mapped_column(Text)
+    blurb: Mapped[str | None] = mapped_column(Text)
+    embed_html: Mapped[str | None] = mapped_column(Text)
+    active: Mapped[bool] = mapped_column(Boolean, default=True, index=True)
+    position: Mapped[int] = mapped_column(Integer, default=1)
+    created_at: Mapped[dt.datetime] = mapped_column(DateTime(timezone=True), default=utcnow)
+
+
 class HttpCache(Base):
     """Conditional-request cache: ETag / Last-Modified per URL (see CRAWLING.md)."""
 

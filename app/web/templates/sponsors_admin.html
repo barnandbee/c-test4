@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block title %}Sponsors admin{% endblock %}
+{% block content %}
+{% macro sponsor_form(sp) %}
+<form method="post" action="/admin/sponsors/save" class="feat-admin-edit sponsor-form">
+  {% if sp %}<input type="hidden" name="sid" value="{{ sp.id }}">{% endif %}
+  <label>Name <input type="text" name="name" required value="{{ sp.name if sp else '' }}"></label>
+  <label>Link URL <input type="url" name="url" value="{{ sp.url if sp and sp.url else '' }}" placeholder="https://…"></label>
+  <label>Logo image URL <input type="url" name="logo_url" value="{{ sp.logo_url if sp and sp.logo_url else '' }}" placeholder="https://…/logo.png"></label>
+  <label>Blurb <input type="text" name="blurb" value="{{ sp.blurb if sp and sp.blurb else '' }}" placeholder="One line about the supporter"></label>
+  <label style="min-width:100%">Embed HTML (optional — ad snippet)
+    <textarea name="embed_html" rows="2" placeholder="Paste an ad-network snippet to use instead of a logo">{{ sp.embed_html if sp and sp.embed_html else '' }}</textarea>
+  </label>
+  <label>Position <input type="number" name="position" min="1" max="20" value="{{ sp.position if sp else 1 }}" style="width:60px"></label>
+  <label class="check" style="align-self:end"><input type="checkbox" name="active" value="1" {% if not sp or sp.active %}checked{% endif %}> Active</label>
+  <button type="submit" class="btn-primary">Save</button>
+</form>
+{% endmacro %}
+
+<div class="admin">
+  <h1>Sponsors &amp; supporters</h1>
+  <p class="admin-summary">
+    Shown in a small, clearly-labelled slot at the bottom of the filter sidebar —
+    never in the results flow. The top 2 active sponsors (by position) display.
+    Use the embed field for an ad-network snippet (e.g. AdSense) instead of a logo.
+    · <a href="/">View board →</a>
+  </p>
+  {% if flash == 'saved' %}<p class="banner ok">Saved.</p>{% endif %}
+  {% if flash == 'deleted' %}<p class="banner">Deleted.</p>{% endif %}
+
+  {% if sponsors %}
+  <div class="feat-admin-list">
+    {% for sp in sponsors %}
+    <div class="feat-admin-row">
+      <div class="feat-admin-info">
+        <strong>{{ sp.name }}</strong>
+        <span class="status status-{{ 'ok' if sp.active else 'never' }}">{{ 'active' if sp.active else 'inactive' }}</span>
+        {% if sp.url %}<span class="muted" style="font-size:12px">· {{ sp.url }}</span>{% endif %}
+      </div>
+      {{ sponsor_form(sp) }}
+      <form method="post" action="/admin/sponsors/delete" class="feat-admin-remove" onsubmit="return confirm('Delete sponsor?')">
+        <input type="hidden" name="sid" value="{{ sp.id }}">
+        <button type="submit" class="btn-ghost">Remove</button>
+      </form>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}<p class="hint">No sponsors yet. Add one below.</p>{% endif %}
+
+  <h2 class="sec">Add a sponsor</h2>
+  {{ sponsor_form(None) }}
+</div>
+{% endblock %}

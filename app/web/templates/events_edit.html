@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit event' if event else 'New event' }}{% endblock %}
+{% block content %}
+<div class="admin blog-editor">
+  <h1>{{ 'Edit event' if event else 'New event' }}</h1>
+  <p class="admin-summary"><a href="/admin/events">← All events</a></p>
+  <form method="post" action="/admin/events/save" class="post-form">
+    {% if event %}<input type="hidden" name="eid" value="{{ event.id }}">{% endif %}
+    <label>Title <input type="text" name="title" required value="{{ event.title if event else '' }}"></label>
+    <div class="post-form-row">
+      <label>Date &amp; time
+        <input type="datetime-local" name="starts_at" value="{{ event.starts_at|dtlocal if event else '' }}">
+      </label>
+      <label>Format
+        <input type="text" name="format" value="{{ event.format if event and event.format else '' }}" placeholder="Online webinar / In person — Melbourne">
+      </label>
+    </div>
+    <label>Registration link
+      <input type="url" name="registration_url" value="{{ event.registration_url if event and event.registration_url else '' }}" placeholder="https://…">
+    </label>
+    <label>Description
+      <textarea name="description" rows="6" placeholder="What the session covers…">{{ event.description if event and event.description else '' }}</textarea>
+    </label>
+    <div class="post-form-actions">
+      <button type="submit" name="action" value="save" class="btn-primary">Save draft</button>
+      <button type="submit" name="action" value="publish" class="btn-primary btn-publish">Publish</button>
+      {% if event and event.status == 'published' %}
+      <button type="submit" name="action" value="unpublish" class="btn-ghost">Unpublish</button>
+      {% endif %}
+    </div>
+  </form>
+</div>
+{% endblock %}

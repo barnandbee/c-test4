@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}Events & webinars — AU Uni Jobs{% endblock %}
+{% macro card(ev) %}
+<article class="event-card">
+  <div class="event-when">{{ ev.starts_at|eventdate }}</div>
+  <h3>{{ ev.title }}</h3>
+  {% if ev.format %}<p class="event-format">{{ ev.format }}</p>{% endif %}
+  {% if ev.description %}<p class="event-desc">{{ ev.description }}</p>{% endif %}
+  {% if ev.registration_url %}
+    <a class="btn-primary event-reg" href="{{ ev.registration_url }}" target="_blank" rel="noopener noreferrer">Register (free) →</a>
+  {% endif %}
+</article>
+{% endmacro %}
+{% block content %}
+<div class="blog-wrap">
+  <header class="blog-head">
+    <h1>Events &amp; webinars</h1>
+    <p>Free, practical sessions on navigating university applications — run as a
+       coach, for groups. A human counterweight to automated hiring.</p>
+  </header>
+
+  {% if upcoming %}
+  <h2 class="sec">Upcoming</h2>
+  <div class="event-grid">{% for ev in upcoming %}{{ card(ev) }}{% endfor %}</div>
+  {% else %}
+  <p class="hint">No upcoming events scheduled yet — check back soon.</p>
+  {% endif %}
+
+  {% if past %}
+  <h2 class="sec">Past</h2>
+  <div class="event-grid past">{% for ev in past %}{{ card(ev) }}{% endfor %}</div>
+  {% endif %}
+</div>
+{% endblock %}
