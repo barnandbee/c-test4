@@ -58,6 +58,28 @@ patterns · **Live-verified:** ❌ no (see caveat)
 > Macquarie, Flinders, ACU, Murdoch), Oracle (Wollongong), and the classic PageUp
 > boards (Monash, JCU, UniSC, Adelaide, CSU, Deakin, Canberra, La Trobe).
 
+> **Batch 4 — platform map from human browser navigation.** The migrated cluster
+> turned out to span *many* platforms, not just Clinch. Confirmed and wired up:
+> **Federation → Workday** (newer `wd105.myworkdaysite.com/recruiting/…` host —
+> adapter now supports both Workday host shapes), **Victoria U → Oracle Recruiting
+> Cloud** (`…oraclecloud.com/…/CX_2001`), **CQUniversity → SAP SuccessFactors**
+> (`careers.cqu.edu.au/search/`, new `successfactors` adapter). Still open:
+> **UTAS** is still PageUp but its *listing* is JS/JSON (job detail pages are the
+> classic `/cw/en/job/<id>/` — needs the listing JSON parsed); **Notre Dame** uses
+> **Funnelback search** (`search.nd.edu.au` — has a `.json` API, small adapter);
+> **UNE / WSU / Newcastle / Curtin** need a sample job-posting URL to fix the
+> parser (WSU moved to `careers.westernsydney.edu.au/jobs`). **Hard / stateful
+> (documented gaps):** **Charles Darwin → TechnologyOne CiAnywhere**
+> (`cdu.t1cloud.com`, ephemeral session tokens, no stable job URLs) and
+> **UTS → Oracle iRecruitment / EBS** (`recruitment.uts.edu.au/OA_HTML/OA.jsp`,
+> session-token URLs) — neither exposes a clean list endpoint we can crawl
+> politely.
+>
+> **Adapter families now:** PageUp, Workday, Oracle Recruiting Cloud, NGA.NET,
+> SmartRecruiters, Clinch, SuccessFactors, html_generic. The "don't write 42
+> scrapers" thesis holds — it's ~8 platform adapters — but the sector is far more
+> fragmented than the original PageUp-dominant table assumed.
+
 ## ⚠️ Read this first
 
 The build environment has **no outbound network access** to university / ATS

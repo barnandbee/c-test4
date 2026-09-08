@@ -8,6 +8,7 @@ from app.ingest.nganet import NgaNetAdapter
 from app.ingest.oracle import OracleAdapter
 from app.ingest.pageup import PageUpAdapter
 from app.ingest.smartrecruiters import SmartRecruitersAdapter
+from app.ingest.successfactors import SuccessFactorsAdapter
 from app.ingest.workday import WorkdayAdapter
 
 _REGISTRY: dict[str, Adapter] = {
@@ -19,6 +20,7 @@ _REGISTRY: dict[str, Adapter] = {
         SmartRecruitersAdapter(),
         OracleAdapter(),
         ClinchAdapter(),
+        SuccessFactorsAdapter(),
         HtmlGenericAdapter(),
     )
 }
