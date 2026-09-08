@@ -12,6 +12,14 @@ patterns · **Live-verified:** ❌ no (see caveat)
 > **La Trobe** PageUp path is `/533/caw/…`, **Deakin** is `/en/listing/` (no `/cw/`),
 > **Sydney** data-centre is `wd105`. These are fixed in `config/universities.yaml`;
 > auto-discovery re-confirms them and resolves the rest on a host with open egress.
+>
+> **Coverage push (batch 1):** confirmed **Macquarie → Workday** (`mq.wd3/CareersatMQ`),
+> **Monash → PageUp 513**, **Deakin → PageUp 949**, **Canberra → PageUp 737**,
+> **UniSC → PageUp 1167**, **UWA → PageUp 589**, **Charles Sturt → PageUp 924**,
+> **QUT & ECU → NGA.NET**, **Flinders → Workday**. New platforms found that need
+> their own adapters (documented gaps): **Newcastle → LiveHire**,
+> **Curtin → ApplyNow**. Still to confirm: Swinburne, Victoria U, Federation,
+> Southern Cross, UNE, UniSQ, Notre Dame, Bond, ACU, JCU, CDU, Murdoch, WSU.
 
 ## ⚠️ Read this first
 

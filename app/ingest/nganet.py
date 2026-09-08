@@ -15,8 +15,9 @@ from selectolax.parser import HTMLParser
 from app.ingest.base import Adapter, parse_date
 from app.normalise.core import RawJob
 
-# NGA.NET detail links look like ...?event=jobs.jobInfo&jobid=12345 or /job/12345
-_JOB_LINK_RE = re.compile(r"(?:jobid=|/job/|jobInfo.*?jobid=)(\d+)", re.I)
+# NGA.NET detail links look like ...?event=jobs.jobInfo&jobid=<GUID or digits>
+# (job ids are usually GUIDs, e.g. DACBA00C-BE1A-4613-9C74-B057010C7FD7).
+_JOB_LINK_RE = re.compile(r"(?:jobid=|/job/)([A-Za-z0-9][A-Za-z0-9\-]{3,})", re.I)
 
 
 class NgaNetAdapter(Adapter):
