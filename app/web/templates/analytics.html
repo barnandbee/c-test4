@@ -70,9 +70,22 @@
     </div>
   </div>
 
+  {% if data.wordcloud %}
+  <div class="an-card an-cloud-card">
+    <h3>Common words in live job titles</h3>
+    {% set maxc = data.wordcloud[0][1] %}
+    <div class="wordcloud">
+      {% for word, count in data.wordcloud %}
+      {% set ratio = count / maxc %}
+      <span class="wc" title="{{ word }} — {{ count }} listing{{ 's' if count != 1 }}"
+            style="font-size: {{ (13 + ratio * 24)|round(1) }}px; opacity: {{ (0.5 + ratio * 0.5)|round(2) }}">{{ word }}</span>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+
   <div class="an-grid">
     {{ bars("By role family", data.by_role_family) }}
-    {{ bars("By pay grade (HEW / Academic level)", data.by_pay_grade) }}
     {{ bars("By level band", data.by_level_band) }}
     {{ bars("By state / territory", data.by_state) }}
     {{ bars("By work type", data.by_work_type) }}
