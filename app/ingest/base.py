@@ -156,6 +156,16 @@ class PoliteClient:
 
         raise last_exc or httpx.HTTPError(f"failed to fetch {url}")
 
+    def inspect(self, url: str, method: str = "GET", **kwargs):
+        """Diagnostic single fetch for the admin probe: honours robots + throttle
+        but returns the raw httpx.Response *without* raising on 4xx/5xx, so the
+        probe can show error bodies, response headers (Allow, Server, WAF markers)
+        and the redirect target. Not used by the crawl path."""
+        if not self._robots_ok(url):
+            raise RobotsDisallowed(url)
+        self._throttle(self._domain(url))
+        return self._client.request(method, url, **kwargs)
+
 
 # -------------------------------------------------------------------------
 # Adapter contract

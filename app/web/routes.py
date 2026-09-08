@@ -379,18 +379,60 @@ def admin_probe(request: Request, url: str = "", xhr: str = "0"):
     sandbox doesn't). Admin-only. e.g. /admin/probe?url=<listing>&xhr=1
     """
     from app.ingest.base import PoliteClient
+    from selectolax.parser import HTMLParser
+    import urllib.parse as _urlparse
 
     if not url:
         return Response("pass ?url=<absolute url>&xhr=0|1", media_type="text/plain")
     headers = ({"X-Requested-With": "XMLHttpRequest",
                 "Accept": "application/json, text/html;q=0.9, */*;q=0.8"} if xhr == "1" else {})
     try:
-        res = PoliteClient().fetch(url, headers=headers)
-        body = res.content[:4000].decode("utf-8", errors="replace")
-        report = (f"status={res.status_code}\nfinal_url={res.final_url}\n"
-                  f"bytes={len(res.content)}\n{'-'*60}\n{body}")
+        res = PoliteClient().inspect(url, headers=headers)
     except Exception as exc:  # noqa: BLE001
-        report = f"ERROR fetching {url}\n{type(exc).__name__}: {exc}"
+        return Response(f"ERROR fetching {url}\n{type(exc).__name__}: {exc}",
+                        media_type="text/plain")
+
+    # Response headers most useful for diagnosing ATS platforms/WAFs.
+    hdr_keys = ["content-type", "server", "allow", "location",
+                "cf-ray", "x-iinfo", "x-cdn", "x-cache", "set-cookie",
+                "x-powered-by", "via"]
+    hdrs = "\n".join(f"  {k}: {res.headers[k]}" for k in hdr_keys if k in res.headers)
+
+    body_bytes = res.content or b""
+    text = body_bytes.decode("utf-8", errors="replace")
+
+    # Pull out anchor hrefs + feed links so job-URL schemes are obvious at a glance.
+    links_report = ""
+    ctype = res.headers.get("content-type", "")
+    if "html" in ctype or text.lstrip()[:1] == "<":
+        tree = HTMLParser(text)
+        feeds = [n.attributes.get("href") for n in tree.css("link[type*=rss], link[type*=atom], link[type*=xml]")]
+        feeds = [f for f in feeds if f]
+        anchors: list[str] = []
+        seen: set[str] = set()
+        for a in tree.css("a"):
+            href = a.attributes.get("href") or ""
+            if not href or href.startswith(("#", "javascript:", "mailto:")):
+                continue
+            absu = _urlparse.urljoin(str(res.url), href)
+            if absu in seen:
+                continue
+            seen.add(absu)
+            anchors.append(absu)
+        jobish = [a for a in anchors if any(w in a.lower() for w in
+                  ("job", "vacan", "career", "position", "requisition", "/req", "opportunit"))]
+        links_report = (
+            f"\n{'-'*60}\nFEED LINKS ({len(feeds)}):\n" + ("\n".join(feeds) or "  (none)") +
+            f"\n{'-'*60}\nJOB-ISH LINKS ({len(jobish)} of {len(anchors)} total anchors):\n" +
+            ("\n".join(jobish[:60]) or "  (none — job links likely load via JS/API)")
+        )
+
+    report = (
+        f"status={res.status_code}\nfinal_url={res.url}\nbytes={len(body_bytes)}\n"
+        f"{'-'*60}\nRESPONSE HEADERS:\n{hdrs or '  (none of interest)'}"
+        f"{links_report}"
+        f"\n{'-'*60}\nBODY (first 3000 chars):\n{text[:3000]}"
+    )
     return Response(report, media_type="text/plain")
 
 
