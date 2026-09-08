@@ -439,5 +439,98 @@ def admin_featured_remove(fid: int = Form(...), session: Session = Depends(get_s
     return RedirectResponse("/admin/featured?flash=removed", status_code=303)
 
 
+# --- blog (public) -----------------------------------------------------------
+@router.get("/blog", response_class=HTMLResponse)
+def blog_index(request: Request, session: Session = Depends(get_session)):
+    from app.models import BlogPost
+    posts = list(session.scalars(
+        select(BlogPost).where(BlogPost.status == "published")
+        .order_by(desc(BlogPost.published_at))
+    ))
+    return _TEMPLATES.TemplateResponse(request, "blog_list.html", {
+        "request": request, "is_admin": is_admin(request), "posts": posts})
+
+
+@router.get("/blog/{slug}", response_class=HTMLResponse)
+def blog_post(slug: str, request: Request, session: Session = Depends(get_session)):
+    from app.models import BlogPost
+    post = session.scalar(select(BlogPost).where(BlogPost.slug == slug))
+    admin = is_admin(request)
+    if not post or (post.status != "published" and not admin):
+        return _TEMPLATES.TemplateResponse(request, "blog_missing.html",
+                                           {"request": request, "is_admin": admin}, status_code=404)
+    return _TEMPLATES.TemplateResponse(request, "blog_post.html",
+                                       {"request": request, "is_admin": admin, "post": post})
+
+
+# --- blog (admin) ------------------------------------------------------------
+@router.get("/admin/blog", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+def admin_blog(request: Request, session: Session = Depends(get_session)):
+    from app.models import BlogPost
+    posts = list(session.scalars(select(BlogPost).order_by(desc(BlogPost.updated_at))))
+    return _TEMPLATES.TemplateResponse(request, "blog_admin.html", {
+        "request": request, "is_admin": True, "posts": posts,
+        "flash": request.query_params.get("flash")})
+
+
+@router.get("/admin/blog/new", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+def admin_blog_new(request: Request):
+    return _TEMPLATES.TemplateResponse(request, "blog_edit.html",
+                                       {"request": request, "is_admin": True, "post": None})
+
+
+@router.get("/admin/blog/{pid}/edit", response_class=HTMLResponse, dependencies=[Depends(require_admin)])
+def admin_blog_edit(pid: int, request: Request, session: Session = Depends(get_session)):
+    from app.models import BlogPost
+    post = session.get(BlogPost, pid)
+    if not post:
+        return RedirectResponse("/admin/blog", status_code=303)
+    return _TEMPLATES.TemplateResponse(request, "blog_edit.html", {
+        "request": request, "is_admin": True, "post": post,
+        "flash": request.query_params.get("flash")})
+
+
+@router.post("/admin/blog/save", dependencies=[Depends(require_admin)])
+def admin_blog_save(pid: str = Form(""), title: str = Form(...), subtitle: str = Form(""),
+                    slug: str = Form(""), body_md: str = Form(""), author: str = Form(""),
+                    action: str = Form("save"), session: Session = Depends(get_session)):
+    from app.blog import render_markdown, unique_slug
+    from app.models import BlogPost
+    post = session.get(BlogPost, int(pid)) if pid else None
+    if post is None:
+        post = BlogPost()
+        session.add(post)
+    post.title = title.strip()
+    post.subtitle = subtitle.strip() or None
+    post.author = author.strip() or None
+    post.body_md = body_md
+    post.body_html = render_markdown(body_md)
+    post.slug = unique_slug(session, slug or title, exclude_id=post.id)
+    if action == "publish":
+        post.status = "published"
+        if not post.published_at:
+            post.published_at = utcnow()
+    elif action == "unpublish":
+        post.status = "draft"
+    session.commit()
+    return RedirectResponse(f"/admin/blog/{post.id}/edit?flash={action}", status_code=303)
+
+
+@router.post("/admin/blog/delete", dependencies=[Depends(require_admin)])
+def admin_blog_delete(pid: int = Form(...), session: Session = Depends(get_session)):
+    from app.models import BlogPost
+    post = session.get(BlogPost, pid)
+    if post:
+        session.delete(post)
+        session.commit()
+    return RedirectResponse("/admin/blog?flash=deleted", status_code=303)
+
+
+@router.get("/admin/blog/stats-snippet", response_class=Response, dependencies=[Depends(require_admin)])
+def admin_blog_stats(session: Session = Depends(get_session)):
+    from app.blog import build_stats_markdown
+    return Response(build_stats_markdown(session), media_type="text/plain")
+
+
 def _iso(value: dt.datetime | None) -> str | None:
     return value.isoformat() if value else None
